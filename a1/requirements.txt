@@ -1,0 +1,19 @@
+# Python requirements for Practical Astrodynamics Assignment 1
+# Orbit propagation and visualization
+
+# Core scientific computing
+numpy>=2.3.0
+matplotlib>=3.10.0
+
+# SGP4 orbit propagation
+sgp4>=2.25
+
+# Geographic plotting
+cartopy>=0.25.0
+pillow>=12.0.0
+
+# Data handling
+pyyaml>=6.0.0
+
+# Astronomy utilities (optional, for time conversions)
+astropy>=7.1.0

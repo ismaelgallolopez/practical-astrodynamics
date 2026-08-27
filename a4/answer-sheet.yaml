@@ -1,0 +1,465 @@
+ls_MDT_OrbKepRes_SRC_0:
+- src/python/plotting/plot_keplerian_residuals.py
+ss_REG_OrbKepRes_CODE_2: "\ndef plot_keplerian_residuals(r_unperturbed, v_unperturbed,\
+  \ r_perturbed, v_perturbed, \n                             time_hours, perturbation_name,\
+  \ output_dir):\n    # Compute Keplerian elements for both orbits\n    kep_unperturbed\
+  \ = []\n    kep_perturbed = []\n    \n    for i in range(len(r_unperturbed)):\n\
+  \        kep_unp = cartesian_to_keplerian(r_unperturbed[i], v_unperturbed[i])\n\
+  \        kep_per = cartesian_to_keplerian(r_perturbed[i], v_perturbed[i])\n    \
+  \    kep_unperturbed.append(kep_unp)\n        kep_perturbed.append(kep_per)\n  \
+  \  \n    # Compute residuals (differences)\n    residuals = []\n    for kep_unp,\
+  \ kep_per in zip(kep_unperturbed, kep_perturbed):\n        residual = {\n      \
+  \      'inc': kep_per['inc'] - kep_unp['inc'],\n            'ecc': kep_per['ecc']\
+  \ - kep_unp['ecc'],\n            'sma': kep_per['sma'] - kep_unp['sma'],\n     \
+  \       'aol': kep_per['aol'] - kep_unp['aol'],\n            'raan': kep_per['raan']\
+  \ - kep_unp['raan']\n        }\n        residuals.append(residual)\n    \n    #\
+  \ Create 5 plots with dual y-axes\n    create_dual_axis_plot(time_hours, kep_unperturbed,\
+  \ kep_perturbed, residuals, output_dir)\n"
+ls_MDT_MagPlot_SRC_0:
+- src/python/plotting/plot_disturbance_accelerations.py
+ss_REG_MagPlot_CODE_1: "\ndef plot_disturbance_magnitudes(accelerations, time_hours,\
+  \ perturbation_name, output_dir):\n    # Compute magnitude of acceleration vectors\n\
+  \    magnitudes = np.linalg.norm(accelerations, axis=1)\n    \n    # Create plot\n\
+  \    fig, ax = plt.subplots(figsize=(16, 6))\n    ax.plot(time_hours, magnitudes,\
+  \ linewidth=1.5)\n    ax.set_xlabel('Time [hours]')\n    ax.set_ylabel('Acceleration\
+  \ magnitude [m/s²]')\n    ax.set_title(f'{perturbation_name} Disturbance Acceleration\
+  \ Magnitude')\n    ax.grid(True, alpha=0.3)\n    \n    plt.tight_layout()\n    plt.savefig(f'{output_dir}/{perturbation_name.lower()}_magnitude.png',\
+  \ dpi=300)\n"
+ss_REG_Language_GEN_0: 'Fortran 90 + Python 3.12 + Bash + Makefile '
+ls_MDT_TLE_GEN_0:
+- USA 149 (DSP 20)
+- 1 26356U 00024A   25337.32641499  .00000105  00000+0  00000+0 0  9990
+- 2 26356  13.0221  13.2218 0001804 255.5101 116.4859  1.00284149 30952
+sf_MDT_OrbTimeIni_NUM_0: 0.0
+sf_MDT_OrbTimeEnd_NUM_0: 259200.0
+sf_MDT_OrbTimeStep_NUM_0: 9.999985992908
+lf_REG_OrbPosIni_NUM_0:
+- 38196636.86428
+- 17744788.89923
+- 1983139.429386
+lf_REG_OrbVelIni_NUM_0:
+- -1292.042930931
+- 2706.308305319
+- 678.0667330339
+lf_REG_OrbPosEnd_NUM_1:
+- 37208394.84352
+- 19678551.22346
+- 2471076.104324
+lf_REG_OrbVelEnd_NUM_1:
+- -1437.230084109
+- 2634.252276169
+- 669.4904534242
+ss_MDT_Integrator_GEN_0: Velocity Verlet
+lf_REG_IntPosIni_NUM_0:
+- 38196636.86428
+- 17744788.89923
+- 1983139.429386
+lf_REG_IntVelIni_NUM_0:
+- -1292.042930931
+- 2706.308305319
+- 678.0667330339
+lf_REG_IntPosEnd_NUM_0.85:
+- 37208394.84352
+- 19678551.22346
+- 2471076.104324
+lf_REG_IntVelEnd_NUM_0.85:
+- -1437.230084109
+- 2634.252276169
+- 669.4904534242
+ls_REG_OrbKepPlotFile_PLOT_1:
+- plots/sgp4/keplerian_elements_sgp4_plot1.png
+- plots/sgp4/keplerian_elements_sgp4_plot2.png
+ls_REG_EulerKepPlotFile_PLOT_1:
+- plots/undisturbed/keplerian_elements_undisturbed_plot1.png
+- plots/undisturbed/keplerian_elements_undisturbed_plot2.png
+ls_MDT_J2_SRC_0:
+- src/fortran/modules/j2_perturbation.f90
+ss_REG_J2_CODE_2.5: "\nsubroutine j2_acceleration(r, a_j2)\n    real(8), intent(in)\
+  \ :: r(3)\n    real(8), intent(out) :: a_j2(3)\n    real(8) :: r_mag, factor\n \
+  \   real(8), parameter :: J2 = 1.083e-03\n    real(8), parameter :: GM = 3.9860044180e+14\
+  \  ! m^3/s^2\n    real(8), parameter :: R_EARTH = 6.4e+06  ! m\n    \n    r_mag\
+  \ = sqrt(r(1)**2 + r(2)**2 + r(3)**2)\n    factor = 1.5d0 * J2 * GM * R_EARTH**2\
+  \ / r_mag**5\n    \n    a_j2(1) = factor * r(1) * (5.0d0*(r(3)/r_mag)**2 - 1.0d0)\n\
+  \    a_j2(2) = factor * r(2) * (5.0d0*(r(3)/r_mag)**2 - 1.0d0)\n    a_j2(3) = factor\
+  \ * r(3) * (5.0d0*(r(3)/r_mag)**2 - 3.0d0)\nend subroutine j2_acceleration\n"
+lf_REG_J2PosIni_NUM_0:
+- 38196636.86428
+- 17744788.89923
+- 1983139.429386
+lf_REG_J2VelIni_NUM_0:
+- -1292.042930931
+- 2706.308305319
+- 678.0667330339
+lf_REG_J2PosEnd_NUM_0.85:
+- 37182260.67975
+- 19725576.97926
+- 2489468.651604
+lf_REG_J2VelEnd_NUM_0.85:
+- -1440.877203602
+- 2632.351251713
+- 669.1271434088
+ls_REG_J2Orb_PLOT_5:
+- plots/j2_keplerian/argument_of_latitude_j2_comparison.png
+- plots/j2_keplerian/eccentricity_j2_comparison.png
+- plots/j2_keplerian/inclination_j2_comparison.png
+- plots/j2_keplerian/raan_j2_comparison.png
+- plots/j2_keplerian/semi_major_axis_j2_comparison.png
+ls_REG_J2Mag_PLOT_2:
+- plots/j2_accelerations/j2_components.png
+- plots/j2_accelerations/j2_magnitude.png
+- plots/j2_accelerations/j2_vs_altitude.png
+ss_REG_J2Obs_OIC_6: '
+
+  1. (plots/j2_keplerian/argument_of_latitude_j2_comparison.png) The disturbed and
+  undisturbed argument-of-latitude curves lie on top of each other for the entire
+  72-hour interval, and the difference curve remains close to zero without showing
+  any visible trend.
+
+
+  2. (plots/j2_accelerations/j2_components.png) All three acceleration components
+  (X, Y, Z) vary periodically with time and remain within a narrow, symmetric range
+  around zero throughout the simulation.
+
+
+  3. (plots/j2_keplerian/raan_j2_comparison.png) The disturbed RAAN decreases overall
+  over the 72-hour interval while the undisturbed curve stays nearly constant, and
+  the difference curve shows a predominantly negative drift with small oscillations.
+
+  '
+ss_REG_J2Int_OIC_8: '
+
+  1. Because the argument of latitude curves overlap entirely, the J2 perturbation
+  does not produce a visible change in the argument of latitude over the simulated
+  period.
+
+
+  2. The periodic nature of the acceleration components together with the steadily
+  decreasing RAAN difference indicates that J2 introduces bounded short-term variations
+  but also produces a consistent long-term change in RAAN.
+
+  '
+ss_REG_J2Con_OIC_10: "\nJ2 perturbation causes a precession in orbital plane, given\
+  \ by the change over time of the RAAN.  \n"
+lf_REG_SunPos_NUM_0.9:
+- -48722372079.02
+- -127712091904.6
+- -55360277327.54
+ls_MDT_SRP_SRC_0:
+- src/fortran/modules/srp_perturbation.f90
+ss_REG_SRP_CODE_2.5: "\nsubroutine srp_acceleration(r, r_sun, a_srp)\n    real(8),\
+  \ intent(in) :: r(3), r_sun(3)\n    real(8), intent(out) :: a_srp(3)\n    real(8)\
+  \ :: r_sat_sun(3), d, f_g, P_srp\n    real(8), parameter :: CR_OVER_M = 0.02  !\
+  \ m^2/kg\n    real(8), parameter :: SOLAR_FLUX = 1361.0  ! W/m^2\n    real(8), parameter\
+  \ :: C_LIGHT = 3.0e+08  ! m/s\n    real(8), parameter :: R_EARTH = 6.4e+06\n   \
+  \ \n    ! Vector from satellite to Sun\n    r_sat_sun = r_sun - r\n    d = sqrt(r_sat_sun(1)**2\
+  \ + r_sat_sun(2)**2 + r_sat_sun(3)**2)\n    \n    ! Compute shadow factor (geometric)\n\
+  \    call compute_shadow_factor(r, r_sun, f_g)\n    \n    ! SRP pressure\n    P_srp\
+  \ = SOLAR_FLUX / C_LIGHT\n    \n    ! Acceleration\n    a_srp = f_g * CR_OVER_M\
+  \ * P_srp * r_sat_sun / d\nend subroutine srp_acceleration\n"
+lf_REG_SRPPosIni_NUM_0:
+- 38196636.86428
+- 17744788.89923
+- 1983139.429386
+lf_REG_SRPVelIni_NUM_0:
+- -1292.042930931
+- 2706.308305319
+- 678.0667330339
+lf_REG_SRPPosEnd_NUM_0.85:
+- 37207478.47367
+- 19679557.40424
+- 2471351.211244
+lf_REG_SRPVelEnd_NUM_0.85:
+- -1437.30567991
+- 2634.238348757
+- 669.491317004
+ls_REG_SRPOrb_PLOT_5:
+- plots/srp_keplerian/argument_of_latitude_srp_comparison.png
+- plots/srp_keplerian/eccentricity_srp_comparison.png
+- plots/srp_keplerian/inclination_srp_comparison.png
+- plots/srp_keplerian/raan_srp_comparison.png
+- plots/srp_keplerian/semi_major_axis_srp_comparison.png
+ls_REG_SRPMag_PLOT_2:
+- plots/srp_accelerations/srp_components.png
+- plots/srp_accelerations/srp_magnitude.png
+- plots/srp_accelerations/srp_with_shadow.png
+ss_REG_SRPObs_OIC_6: '
+
+  1. (plots/srp_accelerations/srp_magnitude.png) SRP magnitude remains constant through
+  the integration period at approximately 9.1e-8 m/s^2.
+
+
+  2. (plots/srp_accelerations/srp_with_shadow.png) The spacecraft remains in full
+  sunlight for the entire 72-hour simulation.
+
+
+  3. (plots/srp_accelerations/srp_components.png) All 3 SRP acceleration components
+  show a 24-hour periodicity, with smooth sinusoidal variation.
+
+  '
+ss_REG_SRPInt_OIC_8: '
+
+  1. Because the SRP magnitude stays constant while the X, Y and Z components vary
+  periodically, the SRP acceleration behaves as a constant-strength vector whose direction
+  rotates once per orbital period.
+
+
+  2. Since the spacecraft remains in full sunlight and the SRP magnitude does not
+  change over the 72 hours, any time variation in the SRP components is caused by
+  the changing geometry between the spacecraft and the Sun, not by shadow passages.
+
+  '
+ss_REG_SRPCon_OIC_10: '
+
+  When solar radiation pressure acts continuously with nearly constant magnitude,
+  it behaves as a steady perturbing force whose direction changes with the orbital
+  motion rather than as an on/off disturbance driven by eclipses.
+
+  '
+sf_AEX_RefHeight_GEN_0.1: 35786000.0
+sf_AEX_ScaleHeight_GEN_0.1: 37300000.0
+sf_AEX_MeanRho_GEN_0.1: 4.04e-19
+ls_AEX_Drag_SRC_0.1:
+- src/fortran/modules/drag_perturbation.f90
+ss_AEX_Drag_CODE_0.8: "\nsubroutine drag_acceleration(r, v, a_drag)\n    real(8),\
+  \ intent(in) :: r(3), v(3)\n    real(8), intent(out) :: a_drag(3)\n    real(8) ::\
+  \ v_rel(3), v_rel_mag, h, rho\n    real(8), parameter :: H_REF = 6.4e+06\n    real(8),\
+  \ parameter :: H_SCALE = 3.7e+07\n    real(8), parameter :: RHO_0 = 4.04e-19\n \
+  \   real(8), parameter :: OMEGA_EARTH = 7.2921159e-5\n    real(8), parameter ::\
+  \ CD_A_OVER_M = 0.01\n    \n    ! Relative velocity (account for rotating atmosphere)\n\
+  \    v_rel(1) = v(1) + OMEGA_EARTH * r(2)\n    v_rel(2) = v(2) - OMEGA_EARTH * r(1)\n\
+  \    v_rel(3) = v(3)\n    v_rel_mag = sqrt(v_rel(1)**2 + v_rel(2)**2 + v_rel(3)**2)\n\
+  \    \n    ! Altitude and density\n    h = sqrt(r(1)**2 + r(2)**2 + r(3)**2) - H_REF\n\
+  \    rho = RHO_0 * exp(-h / H_SCALE)\n    \n    ! Drag acceleration\n    a_drag\
+  \ = -0.5d0 * CD_A_OVER_M * rho * v_rel_mag * v_rel\nend subroutine drag_acceleration\n"
+lf_AEX_DragPosIni_NUM_0:
+- 38196636.86428
+- 17744788.89923
+- 1983139.429386
+lf_AEX_DragVelIni_NUM_0:
+- -1292.042930931
+- 2706.308305319
+- 678.0667330339
+lf_AEX_DragPosEnd_NUM_0.2:
+- 37208394.84353
+- 19678551.22345
+- 2471076.10432
+lf_AEX_DragVelEnd_NUM_0.2:
+- -1437.230084108
+- 2634.252276169
+- 669.4904534242
+ls_AEX_DragOrb_PLOT_1:
+- plots/drag_keplerian/argument_of_latitude_comparison.png
+- plots/drag_keplerian/eccentricity_comparison.png
+- plots/drag_keplerian/inclination_comparison.png
+- plots/drag_keplerian/raan_comparison.png
+- plots/drag_keplerian/semi_major_axis_comparison.png
+ls_AEX_DragMag_PLOT_0.5:
+- plots/drag_accelerations/atmospheric_density.png
+- plots/drag_accelerations/drag_acceleration_and_altitude.png
+- plots/drag_accelerations/drag_acceleration_components.png
+- plots/drag_accelerations/drag_acceleration_magnitude.png
+ss_AEX_DragObs_OIC_1: "\n1. (plots/drag_accelerations/atmospheric_density.png) According\
+  \ to the model used, atmospheric density only changes in the fifth significant digit\
+  \ for the entire 72-hour simulation at GEO altitude.\n\n2. (plots/drag_accelerations/drag_acceleration_magnitude.png)\
+  \ Drag acceleration magnitude shows a 12-hour periodicity, twice as fast as the\
+  \ orbital period. \n\n3. (plots/drag_keplerian/raan_comparison.png) The undisturbed\
+  \ and disturbed RAAN curves visually overlap, and the difference stays near numerical\
+  \ noise level without any visible trend. \n"
+ss_AEX_DragInt_OIC_2: '
+
+  1. For the studied case, the drag force is extremely weak, and its effect on the
+  orbit stays on the same order as the numerical precision of the computed Keplerian
+  elements.
+
+
+  2. Drag does not produce a detectable plane-orientation change over the 72-hour
+  simulation.
+
+  '
+ss_AEX_DragCon_OIC_4: '
+
+  At GEO altitude, atmospheric drag is physically present but, for this configuration
+  and time span, it is negligible compared to other perturbations and can be ignored
+  in practical orbit propagation.
+
+  '
+lf_AEX_MoonPos_NUM_0.1:
+- 263546818.4963
+- 211682539.4102
+- 121014965.2937
+ls_AEX_TBP_SRC_0.1:
+- src/fortran/modules/third_body_perturbation.f90
+ss_AEX_TBP_CODE_0.8: "\nsubroutine third_body_acceleration(r, r_sun, r_moon, a_tbp)\n\
+  \    real(8), intent(in) :: r(3), r_sun(3), r_moon(3)\n    real(8), intent(out)\
+  \ :: a_tbp(3)\n    real(8) :: r_sun_sat(3), r_moon_sat(3), d_sun, d_moon, d_sun_sat,\
+  \ d_moon_sat\n    real(8), parameter :: GM_SUN = 1.327124400419e+20\n    real(8),\
+  \ parameter :: GM_MOON = 4.902800066000e+12\n    \n    ! Sun perturbation\n    r_sun_sat\
+  \ = r_sun - r\n    d_sun = sqrt(r_sun(1)**2 + r_sun(2)**2 + r_sun(3)**2)\n    d_sun_sat\
+  \ = sqrt(r_sun_sat(1)**2 + r_sun_sat(2)**2 + r_sun_sat(3)**2)\n    \n    ! Moon\
+  \ perturbation\n    r_moon_sat = r_moon - r\n    d_moon = sqrt(r_moon(1)**2 + r_moon(2)**2\
+  \ + r_moon(3)**2)\n    d_moon_sat = sqrt(r_moon_sat(1)**2 + r_moon_sat(2)**2 + r_moon_sat(3)**2)\n\
+  \    \n    ! Total third body acceleration\n    a_tbp = GM_SUN * (r_sun_sat/d_sun_sat**3\
+  \ - r_sun/d_sun**3) + &\n            GM_MOON * (r_moon_sat/d_moon_sat**3 - r_moon/d_moon**3)\n\
+  end subroutine third_body_acceleration\n"
+lf_AEX_TBPPosIni_NUM_0:
+- 38196636.86428
+- 17744788.89923
+- 1983139.429386
+lf_AEX_TBPVelIni_NUM_0:
+- -1292.042930931
+- 2706.308305319
+- 678.0667330339
+lf_AEX_TBPPosEnd_NUM_0.2:
+- 37201165.54267
+- 19691510.27559
+- 2471766.622482
+lf_AEX_TBPVelEnd_NUM_0.2:
+- -1438.075096366
+- 2633.712452237
+- 669.9182441074
+ls_AEX_TBPOrb_PLOT_1:
+- plots/tbp_keplerian/argument_of_latitude_tbp_comparison.png
+- plots/tbp_keplerian/eccentricity_tbp_comparison.png
+- plots/tbp_keplerian/inclination_tbp_comparison.png
+- plots/tbp_keplerian/raan_tbp_comparison.png
+- plots/tbp_keplerian/semi_major_axis_tbp_comparison.png
+ls_AEX_TBPMag_PLOT_0.5:
+- plots/tbp_accelerations/tbp_components.png
+- plots/tbp_accelerations/tbp_magnitude.png
+- plots/tbp_accelerations/tbp_vs_altitude.png
+ss_AEX_TBPObs_OIC_1: "\n1. (plots/tbp_accelerations/tbp_magnitude.png) Moon third-body\
+  \ perturbations have higher magnitude than Sun third-body perturbations for the\
+  \ simulation considered.\n\n2. (plots/tbp_keplerian/raan_tbp_comparison.png) The\
+  \ disturbed RAAN slowly increases over the 72-hour interval, while the undisturbed\
+  \ RAAN remains nearly constant. The difference curve shows a smooth positive drift.\n\
+  \n3. (plots/tbp_accelerations/tbp_magnitude.png) Mean TBP acceleration magnitude\
+  \ is approximately 8e-06 m/s^2, with the maximum and minimum values of approximately\
+  \ 1e-05 m/s^2 and 5e-06 m/s^2, respectively.  \n"
+ss_AEX_TBPInt_OIC_2: '
+
+  1. The higher magnitude of the lunar TBP compared to the solar TBP indicates that,
+  for this orbital geometry and time span, the Moon is the dominant third-body contributor
+  to the perturbing acceleration.
+
+
+  2. The positive drift of the RAAN difference suggests that third-body perturbations
+  introduce a secular eastward rotation of the orbital plane over the 72-hour interval.
+
+
+  3. The TBP acceleration magnitude varies within a relatively narrow band (from about
+  5e-06 to 1.3e-05 m/s^2), so the applied perturbation remains of similar order throughout
+  the simulation, leading to gradual rather than abrupt changes in the orbital elements.
+
+  '
+ss_AEX_TBPCon_OIC_4: '
+
+  For near-GEO orbits, third-body perturbations from the Moon (and, to a lesser extent,
+  the Sun) can dominate the perturbing acceleration budget and drive secular changes
+  in angular elements such as RAAN and inclination, while acting with a slowly varying
+  magnitude over each orbital period.
+
+  '
+ss_CEX_Explain_GEN_10: '
+
+  Code excellence features:
+
+
+  1. Dataclass Architecture: Python modules use @dataclass for KeplerianElements container
+  with type hints (np.ndarray) and automatic __repr__ showing mean values, eliminating
+  boilerplate constructors.
+
+
+  2. Dual-Layer Plot Rendering: Transparent thick lines (alpha=0.3, linewidth=3, zorder=1)
+  + crisp dotted lines (alpha=1.0, linestyle='':'', zorder=2) allow simultaneous trend
+  magnitude and temporal detail visibility.
+
+
+  3. External Legend Layout: bbox_to_anchor=(1.02, 1.0, 0.2, 0) positions legends
+  in dedicated 22% right margin with plt.tight_layout(rect=[0, 0, 0.78, 1]) preventing
+  data-legend overlap.
+
+
+  4. Multi-Axis Scientific Notation: ax2.ticklabel_format(style=''scientific'', scilimits=(0,0))
+  with tick_params(pad=25) prevents Y-axis label collisions on triple-Y-axis plots.
+
+
+  5. Automated Directory Management: Plot scripts detect output path (plots/sgp4/
+  vs plots/undisturbed/) based on data source using os.path.exists() checks with fallback
+  logic.
+
+
+  6. JPL Horizons API Integration: URL-encoded query strings (CENTER=''500@399'',
+  EPHEM_TYPE=''VECTORS'', VEC_TABLE=''2'') with $$SOE/$$EOE marker parsing and regex
+  r''GM.*=\s*([0-9.E+-]+)'' for header extraction.
+
+
+  7. Fortran Regex Parameter Extraction: Python parses Fortran source files using
+  r''parameter.*?J2.*?=\s*([0-9.E+-_]+)'' handling _dp suffixes, whitespace variations,
+  and comment lines to auto-populate answer sheet.
+
+
+  8. Unified Third-Body Data File: Single third_body_positions.txt with (x, y, z,
+  GM_sun, GM_moon) format eliminates redundancy; SRP reads columns 1-3, TBP reads
+  all columns.
+
+
+  9. Julian Date Dual-Mode Conversion: julian_to_time_hours() handles both (N, 2)
+  [jd, fr] arrays from NPZ and (N,) seconds arrays from TXT using ndim checks.
+
+
+  10. Velocity Verlet Implementation: Fortran module with abstract interface for accel_func()
+  supports both state-only and state+time acceleration functions via separate subroutines
+  (velocity_verlet_integrate vs velocity_verlet_integrate_rv).
+
+
+  11. Cross-Language Performance: Fortran propagation achieves <10ms for 259,200s
+  (25,921 timesteps) while Python handles I/O and plotting, demonstrating appropriate
+  compiled vs interpreted language selection.
+
+
+  12. Comprehensive YAML Generation: 73 answer keys with automatic validation, scientific
+  notation handling, and ordered dictionary (dict not OrderedDict) matching README
+  structure.
+
+
+  13. Modular Perturbation Architecture: Separate Fortran modules (j2_perturbation,
+  srp_perturbation, drag_perturbation, third_body_perturbation) each with independent
+  acceleration functions and runtime-read physical parameters.
+
+
+  14. Organized Output Structure: Automated plots/{sgp4,undisturbed,j2_keplerian,srp_*,drag_*,tbp_*}/
+  subdirectories with programmatic path.exists() and makedirs() creation.
+
+
+  15. Conditional Compilation Shell Scripts: Timestamp comparison [ "src/*.f90" -nt
+  "bin/*" ] implements GNU Make-style dependency checking without external build tools.
+
+  '
+ss_MDT_AI_GEN_0: '
+
+  AI (GitHub Copilot) was used as a coding assistant throughout this assignment in
+  the following ways:
+
+
+  1. Code Structure: AI helped design the modular organization of Fortran modules
+  and Python packages, suggesting separation of concerns and best practices for scientific
+  computing projects.
+
+
+  2. Debugging: When encountering issues with file parsing (e.g., GM values from Horizons,
+  Sun position file format), AI helped identify regex patterns and parsing logic errors.
+
+
+  3. Plot Formatting: AI suggested matplotlib techniques for dual y-axis plots, zorder
+  layering for superimposed lines, and bbox_to_anchor for external legend positioning.
+
+
+  4. Documentation: AI helped draft clear docstrings and comments explaining the physics
+  and mathematics behind each perturbation model.
+
+  '
+sf_REG_WORKLOAD_GEN_0: 15.0
+ss_REG_FEEDBACK_GEN_0: "\nI liked that we did not need to worry about physical models\
+  \ but rather just the code implementation details. \nI would have also liked to\
+  \ make a point about the model considering all perturbations together rather than\
+  \ each one isolated."

@@ -1,0 +1,77 @@
+# Assignment A2 Configuration File
+# All physical constants and script parameters in one place
+
+# Physical Constants
+physics:
+  # WGS72 gravitational parameter (km³/s²)
+  mu_earth: 398600.8
+  # Earth rotation rate (rad/s) - WGS72
+  omega_earth: 7.292115e-5
+  # Earth equatorial radius (km)
+  r_earth: 6378.137
+
+# Orbit Propagation Parameters
+propagation:
+  # Time domain
+  initial_time_seconds: 0.0        # Seconds from TLE epoch
+  final_time_seconds: 259200.0     # 72 hours in seconds
+  time_step_seconds: 600.0         # 10 minutes
+  
+# Satellite Configuration
+satellite:
+  # Default NORAD ID (USA 149 - DSP 20)
+  norad_id: 23435
+  # Celestrak catalog for TLE retrieval
+  celestrak_catalog: "gps-ops"
+
+# File Paths
+paths:
+  data_dir: "data"
+  plots_dir: "plots"
+  tle_file: "data/tle.txt"
+  
+  # Output files
+  orbit_propagation: "data/orbit_propagation.npz"
+  keplerian_elements: "data/keplerian_elements.npz"
+  cartesian_from_keplerian: "data/cartesian_from_keplerian.npz"
+  corotating_spherical: "data/corotating_spherical.npz"
+
+# Plotting Parameters
+plotting:
+  dpi: 300
+  figsize_standard: [12, 6]
+  figsize_wide: [14, 8]
+  figsize_keplerian: [12, 6]
+  
+  # Skip plotting if file exists (for efficiency)
+  skip_if_exists: false
+  
+  # Plot styles
+  style: "default"  # can be: default, seaborn, ggplot
+  grid_alpha: 0.3
+  line_width: 1.5
+
+# Numerical Tolerances
+tolerances:
+  # For Keplerian singularity detection
+  eccentricity_circular: 1e-8
+  inclination_equatorial: 1e-8
+  
+  # For validation
+  position_tolerance_km: 1e-6
+  velocity_tolerance_km_s: 1e-9
+  angle_tolerance_deg: 1e-10
+
+# Debug Mode
+debug:
+  enabled: false
+  verbose: true
+  save_intermediate: false
+
+# Code Excellence Features Enabled
+features:
+  auto_create_directories: true
+  auto_download_tle: true
+  validate_inputs: true
+  benchmark_performance: false
+  unit_tests: false

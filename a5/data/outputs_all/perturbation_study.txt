@@ -1,0 +1,19 @@
+# Perturbation Effects Study
+# Columns: Config_ID, J2, Drag, SRP, ThirdBody, CGPD[m], Time[s], Config_Name
+#
+  1  F  F  F  F    953.017870    0.000000  Two-Body Only
+  2  T  F  F  F    957.103885    0.000000  J2
+  3  F  T  F  F    953.017870    0.000000  Drag
+  4  T  T  F  F    957.103885    0.000000  J2+Drag
+  5  F  F  T  F    950.416423    0.000000  SRP
+  6  T  F  T  F    952.138635    0.000000  J2+SRP
+  7  F  T  T  F    950.416423    0.000000  Drag+SRP
+  8  T  T  T  F    952.138635    0.000000  J2+Drag+SRP
+  9  F  F  F  T   1210.362010    0.000000  TBP
+ 10  T  F  F  T   1104.758630    0.001000  J2+TBP
+ 11  F  T  F  T   1210.362010    0.000000  Drag+TBP
+ 12  T  T  F  T   1104.758630    0.000000  J2+Drag+TBP
+ 13  F  F  T  T   1208.328443    0.000000  SRP+TBP
+ 14  T  F  T  T   1100.474867    0.000000  J2+SRP+TBP
+ 15  F  T  T  T   1208.328443    0.000000  Drag+SRP+TBP
+ 16  T  T  T  T   1100.474867    0.001000  J2+Drag+SRP+TBP

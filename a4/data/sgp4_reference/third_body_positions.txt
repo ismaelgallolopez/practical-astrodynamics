@@ -1,0 +1,17 @@
+# Third body positions for orbital perturbation calculations
+# TLE epoch: 2025-12-03 00:00 UTC
+# Reference frame: ICRF (inertial frame)
+# Center: Geocenter (Earth center)
+#
+# Sun radius: 6.965000e+08 m
+# Sun GM: 1.327124400419e+20 m³/s²
+# Moon radius: 1.737400e+06 m
+# Moon GM: 4.902800066000e+12 m³/s²
+#
+# Format: X [m], Y [m], Z [m], GM [m³/s²]
+#
+# Sun position (geocentric ICRF)
+-4.872237207901765e+10 -1.277120919045618e+11 -5.536027732753738e+10 1.327124400419394e+20
+#
+# Moon position (geocentric ICRF)
+2.635468184963133e+08 2.116825394101563e+08 1.210149652937185e+08 4.902800066000000e+12

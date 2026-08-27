@@ -1,0 +1,37 @@
+# Generated HTML files
+README.html
+
+# Python cache files
+*.pyc
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+pa_env/
+
+# IDE settings
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Data files (optional - uncomment if you don't want to track large data)
+# data/*.npz
+# data/*.txt
+
+# Plot files (optional - uncomment if you don't want to track plots)
+# plots/*.png
+# plots/*.pdf
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*.bak
+*.tmp

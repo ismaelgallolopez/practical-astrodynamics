@@ -1,0 +1,29 @@
+# Python requirements for Practical Astrodynamics Assignment A2
+# Orbit propagation, coordinate transformations, and visualization
+
+# Core scientific computing
+numpy>=2.3.0
+matplotlib>=3.10.0
+
+# SGP4 orbit propagation
+sgp4>=2.25
+
+# Geographic plotting
+cartopy>=0.25.0
+pillow>=12.0.0
+
+# Data handling and configuration
+pyyaml>=6.0.0
+
+# HTTP requests for TLE fetching
+requests>=2.31.0
+
+# Unit testing
+pytest>=7.4.0
+
+# Code formatting (optional)
+black>=23.0.0
+flake8>=6.0.0
+
+# Astronomy utilities (optional, for time conversions)
+astropy>=7.1.0

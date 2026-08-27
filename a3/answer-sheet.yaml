@@ -1,0 +1,477 @@
+# Assignment A3 Answer Sheet
+# Practical Astrodynamics
+# Auto-generated from repository data
+
+ss_REG_Language_GEN_0: Fortran 90 + Python 3.12 + Bash + Makefile
+ls_MDT_TLE_GEN_0:
+- USA 149 (DSP 20)
+- 1 26356U 00024A   25331.33366002  .00000112  00000+0  00000+0 0  9997
+- 2 26356  13.0172  13.2603 0001308 246.9809 121.4463  1.00282440 30895
+sf_MDT_OrbTimeIni_NUM_0: 0.0
+sf_MDT_OrbTimeEnd_NUM_0: 259200.0
+sf_MDT_OrbTimeStep_NUM_0: 0.9999945759773254
+lf_REG_OrbPosIni_NUM_0:
+- 39218768.09094286
+- 15418788.447003722
+- 1395244.1988536632
+lf_REG_OrbVelIni_NUM_0:
+- -1117.5420683620343
+- 2781.134167805106
+- 685.3707525289473
+lf_REG_OrbPosEnd_NUM_1:
+- 38341041.053818576
+- 17439273.19662344
+- 1902017.8311836196
+lf_REG_OrbVelEnd_NUM_1:
+- -1269.2144227374715
+- 2716.887253013976
+- 678.9448361765432
+ls_MDT_Grav_SRC_0:
+- src/fortran/gravity.f90
+ss_REG_Grav_CODE_1: "module gravity\n    implicit none\n    \n    ! Parameters\n \
+  \   integer, parameter :: dp = selected_real_kind(15, 307)\n    real(dp), parameter\
+  \ :: mu_earth = 3.986004418e14_dp  ! Earth's gravitational parameter [m^3/s^2]\n\
+  \    \ncontains\n\n    ! Compute 3D gravitational acceleration from point mass\n\
+  \    ! Input: position vector r [m]\n    ! Output: acceleration vector a [m/s^2]\n\
+  \    function gravitational_acceleration(r) result(a)\n        real(dp), intent(in)\
+  \ :: r(3)\n        real(dp) :: a(3)\n        real(dp) :: r_mag\n        \n     \
+  \   ! Compute distance from Earth center\n        r_mag = sqrt(r(1)**2 + r(2)**2\
+  \ + r(3)**2)\n        \n        ! Compute gravitational acceleration: a = -mu *\
+  \ r / |r|^3\n        a = -mu_earth * r / r_mag**3\n        \n    end function gravitational_acceleration\n\
+  \nend module gravity\n"
+ls_MDT_Euler_SRC_0:
+- src/fortran/euler_method.f90
+ss_REG_Euler_CODE_1: "module euler_integrator_module\n    use gravity\n    implicit\
+  \ none\n    \ncontains\n\n    ! Euler integrator subroutine\n    ! Inputs:\n   \
+  \ !   - state0(6): initial state vector [x, y, z, vx, vy, vz]\n    !   - dt: time\
+  \ step [s]\n    !   - t_stop: stop time [s]\n    !   - accel_func: function that\
+  \ computes acceleration from position\n    ! Outputs:\n    !   - t_array: array\
+  \ of time values\n    !   - state_array: array of state vectors at each time step\n\
+  \    !   - n_steps: number of time steps\n    subroutine euler_integrate(state0,\
+  \ dt, t_stop, accel_func, t_array, state_array, n_steps)\n        real(dp), intent(in)\
+  \ :: state0(6)\n        real(dp), intent(in) :: dt\n        real(dp), intent(in)\
+  \ :: t_stop\n        integer, intent(out) :: n_steps\n        real(dp), allocatable,\
+  \ intent(out) :: t_array(:)\n        real(dp), allocatable, intent(out) :: state_array(:,:)\n\
+  \        \n        interface\n            function accel_func(r) result(a)\n   \
+  \             import :: dp\n                real(dp), intent(in) :: r(3)\n     \
+  \           real(dp) :: a(3)\n            end function accel_func\n        end interface\n\
+  \        \n        integer :: i\n        real(dp) :: t_current\n        real(dp)\
+  \ :: r(3), v(3), a(3)\n        \n        ! Calculate number of steps\n        n_steps\
+  \ = int(t_stop / dt) + 1\n        \n        ! Allocate output arrays\n        allocate(t_array(n_steps))\n\
+  \        allocate(state_array(6, n_steps))\n        \n        ! Initialize first\
+  \ state\n        t_array(1) = 0.0_dp\n        state_array(:, 1) = state0\n     \
+  \   \n        ! Euler integration loop\n        do i = 1, n_steps - 1\n        \
+  \    ! Current time\n            t_current = t_array(i)\n            \n        \
+  \    ! Extract position and velocity\n            r = state_array(1:3, i)\n    \
+  \        v = state_array(4:6, i)\n            \n            ! Compute acceleration\
+  \ using provided function\n            a = accel_func(r)\n            \n       \
+  \     ! Euler step: state(n+1) = state(n) + dt * derivative\n            state_array(1:3,\
+  \ i+1) = r + dt * v        ! position update\n            state_array(4:6, i+1)\
+  \ = v + dt * a        ! velocity update\n            \n            ! Update time\n\
+  \            t_array(i+1) = t_current + dt\n        end do\n        \n    end subroutine\
+  \ euler_integrate\n\nend module euler_integrator_module\n"
+sf_MDT_EulerTimeEnd_NUM_0: 259200.0
+sf_MDT_EulerTimeStep_NUM_0: 100.0
+sf_REG_EulerTimeTotal_NUM_0.5: 0.000285
+sf_REG_EulerTimeEff_NUM_0.5: 1.09911e-07
+lf_REG_EulerPosIni_NUM_0:
+- 39218768.09094
+- 15418788.447
+- 1395244.198854
+lf_REG_EulerVelIni_NUM_0:
+- -1117.542068362
+- 2781.134167805
+- 685.3707525289
+lf_REG_EulerPosEnd_NUM_2:
+- -37204542.89193413
+- -35591870.49013402
+- -6044071.916987366
+lf_REG_EulerVelEnd_NUM_2:
+- 1881.589495804293
+- -1954.5806224370697
+- -539.7163709710526
+ls_REG_OrbKepPlotFile_PLOT_1:
+- plots/timestep_comparisons/dt100s/sgp4_keplerian_plot1.png
+- plots/timestep_comparisons/dt100s/sgp4_keplerian_plot2.png
+ls_REG_EulerKepPlotFile_PLOT_1:
+- plots/timestep_comparisons/dt100s/euler_keplerian_plot1.png
+- plots/timestep_comparisons/dt100s/euler_keplerian_plot2.png
+ls_MDT_GlobErr_SRC_0:
+- src/python/compute_position_difference.py
+ss_REG_GlobErr_CODE_2: "#!/usr/bin/env python3\n\"\"\"\nCompute position differences\
+  \ between SGP4 and Euler propagation methods.\nUses L2 norm to quantify the difference\
+  \ at each time step.\n\nUsage: python compute_position_difference.py <timestep_seconds>\n\
+  \"\"\"\n\nimport numpy as np\nimport matplotlib.pyplot as plt\nfrom keplerian import\
+  \ OrbitDataLoader, OrbitPropagator\nimport os\nimport sys\n\n\ndef load_propagation_data(sgp4_file:\
+  \ str, euler_file: str):\n    \"\"\"\n    Load data from both SGP4 and Euler propagators.\n\
+  \    \n    Args:\n        sgp4_file: Path to SGP4 NPZ file\n        euler_file:\
+  \ Path to Euler text file\n        \n    Returns:\n        Tuple of (times_sgp4,\
+  \ pos_sgp4, vel_sgp4, times_euler, pos_euler, vel_euler, name_sgp4)\n    \"\"\"\n\
+  \    loader = OrbitDataLoader()\n    \n    # Load SGP4 data\n    print(f\"Loading\
+  \ SGP4 data from: {sgp4_file}\")\n    times_sgp4, pos_sgp4, vel_sgp4, name_sgp4\
+  \ = loader.load_from_file(sgp4_file)\n    print(f\"  Loaded {len(pos_sgp4)} points\"\
+  )\n    \n    # Load Euler data\n    print(f\"Loading Euler data from: {euler_file}\"\
+  )\n    times_euler, pos_euler, vel_euler, name_euler = loader.load_from_file(euler_file)\n\
+  \    print(f\"  Loaded {len(pos_euler)} points\")\n    \n    return times_sgp4,\
+  \ pos_sgp4, vel_sgp4, times_euler, pos_euler, vel_euler, name_sgp4\n\n\ndef convert_times_to_seconds(times):\n\
+  \    \"\"\"\n    Convert time array to seconds from epoch.\n    \n    Args:\n  \
+  \      times: Either Julian date array (N, 2) or seconds array (N,)\n        \n\
+  \    Returns:\n        Time in seconds from epoch\n    \"\"\"\n    if times.nd"
+lf_MDT_GlobErrSteps_NUM_0.5:
+- 100.0
+- 500.0
+ls_MDT_GlobErrPlot_SRC_0:
+- src/python/compute_position_difference.py
+ss_REG_GlobErrPlot_CODE_2: "#!/usr/bin/env python3\n\"\"\"\nCompute position differences\
+  \ between SGP4 and Euler propagation methods.\nUses L2 norm to quantify the difference\
+  \ at each time step.\n\nUsage: python compute_position_difference.py <timestep_seconds>\n\
+  \"\"\"\n\nimport numpy as np\nimport matplotlib.pyplot as plt\nfrom keplerian import\
+  \ OrbitDataLoader, OrbitPropagator\nimport os\nimport sys\n\n\ndef load_propagation_data(sgp4_file:\
+  \ str, euler_file: str):\n    \"\"\"\n    Load data from both SGP4 and Euler propagators.\n\
+  \    \n    Args:\n        sgp4_file: Path to SGP4 NPZ file\n        euler_file:\
+  \ Path to Euler text file\n        \n    Returns:\n        Tuple of (times_sgp4,\
+  \ pos_sgp4, vel_sgp4, times_euler, pos_euler, vel_euler, name_sgp4)\n    \"\"\"\n\
+  \    loader = OrbitDataLoader()\n    \n    # Load SGP4 data\n    print(f\"Loading\
+  \ SGP4 data from: {sgp4_file}\")\n    times_sgp4, pos_sgp4, vel_sgp4, name_sgp4\
+  \ = loader.load_from_file(sgp4_file)\n    print(f\"  Loaded {len(pos_sgp4)} points\"\
+  )\n    \n    # Load Euler data\n    print(f\"Loading Euler data from: {euler_file}\"\
+  )\n    times_euler, pos_euler, vel_euler, name_euler = loader.load_from_file(euler_file)\n\
+  \    print(f\"  Loaded {len(pos_euler)} points\")\n    \n    return times_sgp4,\
+  \ pos_sgp4, vel_sgp4, times_euler, pos_euler, vel_euler, name_sgp4\n\n\ndef convert_times_to_seconds(times):\n\
+  \    \"\"\"\n    Convert time array to seconds from epoch.\n    \n    Args:\n  \
+  \      times: Either Julian date array (N, 2) or seconds array (N,)\n        \n\
+  \    Returns:\n        Time in seconds from epoch\n    \"\"\"\n    if times.ndim\
+  \ == 2:\n        # Julian date format - convert to seconds\n        jd_full = times[:,\
+  \ 0] + times[:, 1]\n        # Convert to seconds from first epoch\n        time_seconds\
+  \ = (jd_full - jd_full[0]) * 86400.0\n    else:\n        # Already in seconds format\n\
+  \        time_seconds = times - times[0]\n    \n    return time_seconds\n\n\ndef\
+  \ compute_position_differences(pos_sgp4, pos_euler):\n    \"\"\"\n    Compute L2\
+  \ norm of position differences.\n    \n    Args:\n        pos_sgp4: SGP4 positions\
+  \ [N x 3] in km\n        "
+ls_REG_GlobErr_PLOT_7:
+- plots/combined_timesteps_euler/gpd_combined.png
+- plots/combined_timesteps_euler/position_magnitude_combined.png
+- plots/timestep_comparisons/dt100s/keplerian_comparison_inclination.png
+- plots/timestep_comparisons/dt100s/keplerian_comparison_eccentricity.png
+- plots/timestep_comparisons/dt100s/keplerian_comparison_semi_major_axis.png
+- plots/timestep_comparisons/dt100s/keplerian_comparison_true_anomaly_arg_periapsis.png
+- plots/timestep_comparisons/dt100s/keplerian_comparison_raan.png
+lf_MDT_CumGlobErrSteps_NUM_0.5:
+- 1.0
+- 2.0
+- 5.0
+- 10.0
+- 20.0
+- 30.0
+- 50.0
+- 75.0
+- 100.0
+- 150.0
+- 200.0
+- 300.0
+- 500.0
+- 750.0
+- 1000.0
+- 1500.0
+- 2000.0
+- 5000.0
+- 10000.0
+- 20000.0
+ls_MDT_CumGlobErrPlot_SRC_0:
+- src/python/plot_cgpd_vs_timestep.py
+ss_REG_CumGlobErrPlot_CODE_2: "#!/usr/bin/env python3\n\"\"\"\nPlot CGPD (Cumulative\
+  \ Global Position Difference) at final time vs timestep.\n\nCGPD is defined as the\
+  \ RMS over time of the GPD (Global Position Difference),\nwhere GPD is the L2 norm\
+  \ of position differences between SGP4 and Euler.\n\nCGPD = sqrt(mean(GPD^2))\n\"\
+  \"\"\n\nimport numpy as np\nimport matplotlib.pyplot as plt\nfrom keplerian import\
+  \ OrbitDataLoader\nimport os\nimport sys\n\n\ndef compute_cgpd_at_final_time(sgp4_file:\
+  \ str, euler_file: str):\n    \"\"\"\n    Compute CGPD at the final integration\
+  \ time.\n    \n    CGPD = RMS of GPD over time = sqrt(mean(GPD^2))\n    where GPD\
+  \ = L2 norm of position difference\n    \n    Args:\n        sgp4_file: Path to\
+  \ SGP4 NPZ file\n        euler_file: Path to Euler output file\n        \n    Returns:\n\
+  \        cgpd: Cumulative global position difference at final time (km)\n    \"\"\
+  \"\n    loader = OrbitDataLoader()\n    \n    # Load both datasets\n    times_sgp4,\
+  \ pos_sgp4, vel_sgp4, _ = loader.load_from_file(sgp4_file)\n    times_euler, pos_euler,\
+  \ vel_euler, _ = loader.load_from_file(euler_file)\n    \n    # Convert times to\
+  \ seconds if needed\n    if times_sgp4.ndim == 2:\n        times_sgp4 = (times_sgp4[:,\
+  \ 0] - times_sgp4[0, 0]) * 86400.0 + (times_sgp4[:, 1] - times_sgp4[0, 1])\n   \
+  \ if times_euler.ndim == 2:\n        times_euler = (times_euler[:, 0] - times_euler[0,\
+  \ 0]) * 86400.0 + (times_euler[:, 1] - times_euler[0, 1])\n    \n    # Interpolate\
+  \ SGP4 to Euler time points\n    pos_sgp4_interp = np.zeros_like(pos_euler)\n  \
+  \  for i in range(3):\n        pos_sgp"
+ls_REG_CumGlobErr_PLOT_7:
+- plots/summary/cgpd_vs_timestep.png
+ss_REG_OrbObs_OIC_10: "1. (euler_keplerian_plot1.png) Inclination changes by much\
+  \ less than 0.5e-11 degrees over the three-days integration for point-mass Earth\
+  \ model integration with Euler method.\n        \n        2. (position_magnitude_combined.png)\
+  \ Orbital radius drift from the SGP4 model increases with time, with the deviation\
+  \ being proportional to the step time.\n        \n        3. (sgp4_keplerian_plot1.png\
+  \ & euler_keplerian_plot1.png) Semi-major axis (SMA) shows an average decrease over\
+  \ time for the SGP4 orbit, while the Euler orbit's one increases."
+ss_REG_OrbInt_OIC_15: "1. Inclination is constant because the point-mass gravity model\
+  \ creates a central force field, generating zero torque to perturb the angular momentum\
+  \ vector. Since inclination is defined by the orientation of angular momentum vector,\
+  \ a constant angular momentum vector implies a constant inclination.\n        \n\
+  \        2. Euler's SMA increases due to artificial energy gain from linearizing\
+  \ the curved path (integration error). Since specific orbital energy is inversely\
+  \ proportional to the semi-major axis, an increase in energy mathematically dictates\
+  \ an increase in SMA. In contrast, SGP4's SMA decreases because the model includes\
+  \ physical atmospheric drag, which dissipates orbital energy."
+ss_REG_OrbCon_OIC_23: The Euler integrator with a point-mass gravity model fails to
+  provide a physically realistic representation of the SGP4 reference orbit. As established
+  in the interpretations, the method introduces artificial energy gain due to first-order
+  truncation errors, causing non-physical divergence in the semi-major axis and eccentricity.
+  Furthermore, the point-mass assumption neglects dominant secular perturbations (like
+  J2), rendering this approach unsuitable for the precise long-term propagation of
+  Earth orbits.
+ss_AEX_AltName_GEN_0.1: Velocity Verlet
+ls_AEX_Alt_SRC_0.1:
+- src/fortran/velocity_verlet.f90
+ss_AEX_Alt_CODE_2: "module velocity_verlet_integrator_module\n    use gravity\n  \
+  \  implicit none\n\ncontains\n\n    ! Velocity Verlet integrator subroutine\n  \
+  \  ! Inputs:\n    !   - state0(6): initial state vector [x, y, z, vx, vy, vz]\n\
+  \    !   - dt: time step [s]\n    !   - t_stop: stop time [s]\n    !   - accel_func:\
+  \ function that computes acceleration from position\n    ! Outputs:\n    !   - t_array:\
+  \ array of time values\n    !   - state_array: array of state vectors at each time\
+  \ step\n    !   - n_steps: number of time steps\n    subroutine velocity_verlet_integrate(state0,\
+  \ dt, t_stop, accel_func, t_array, state_array, n_steps)\n        real(dp), intent(in)\
+  \ :: state0(6)\n        real(dp), intent(in) :: dt\n        real(dp), intent(in)\
+  \ :: t_stop\n        integer, intent(out) :: n_steps\n        real(dp), allocatable,\
+  \ intent(out) :: t_array(:)\n        real(dp), allocatable, intent(out) :: state_array(:,:)\n\
+  \n        interface\n            function accel_func(r) result(a)\n            \
+  \    import :: dp\n                real(dp), intent(in) :: r(3)\n              \
+  \  real(dp) :: a(3)\n            end function accel_func\n        end interface\n\
+  \n        integer :: i\n        real(dp) :: t_current\n        real(dp) :: r(3),\
+  \ v(3)\n        real(dp) :: a_n(3), a_np1(3)\n        real(dp) :: r_new(3), v_new(3)\n\
+  \        real(dp) :: dt2\n\n        ! Calculate number of steps\n        n_steps\
+  \ = int(t_stop / dt) + 1\n\n        ! Allocate output arrays\n        allocate(t_array(n_steps))\n\
+  \        allocate(state_array(6, n_steps))\n\n        ! Precompute dt^2\n      \
+  \  dt2 = dt * dt\n\n        ! Initialize first state\n        t_array(1)      =\
+  \ 0.0_dp\n        state_array(:,1) = state0\n\n        ! Velocity Verlet integration\
+  \ loop\n        do i = 1, n_steps - 1\n            ! Current time\n            t_current\
+  \ = t_array(i)\n\n            ! Extract position and velocity at step i\n      \
+  \      r = state_array(1:3, i)\n            v = state_array(4:6, i)\n\n        \
+  \    ! Acceleration at current position: a_n = a(r_n)\n            a_n = accel_func(r)\n\
+  \n            ! --- Position update ---\n            ! r_{n+1} = r_n + dt*v_n +\
+  \ 0.5*dt^2*a_n\n            r_new = r + dt * v + 0.5_dp * dt2 * a_n\n\n        \
+  \    ! Acceleration at new position: a_{n+1} = a(r_{n+1})\n            a_np1 = accel_func(r_new)\n\
+  \n            ! --- Velocity update ---\n            ! v_{n+1} = v_n + 0.5*dt*(a_n\
+  \ + a_{n+1})\n            v_new = v + 0.5_dp * dt * (a_n + a_np1)\n\n          \
+  \  ! Store updated state\n            state_array(1:3, i+1) = r_new\n          \
+  \  state_array(4:6, i+1) = v_new\n\n            ! Update time\n            t_array(i+1)\
+  \ = t_current + dt\n        end do\n\n    end subroutine velocity_verlet_integrate\n\
+  \nend module velocity_verlet_integrator_module\n"
+sf_AEX_AltTimeEnd_NUM_0.1: 259200.0
+sf_AEX_AltTimeStep_NUM_0.1: 100.0
+sf_AEX_AtlTimeTotal_NUM_0.5: 0.000432
+sf_AEX_AltTimeEff_NUM_0.5: 1.66602e-07
+lf_AEX_AltPosIni_NUM_0:
+- 39218768.09094
+- 15418788.447
+- 1395244.198854
+lf_AEX_AltVelIni_NUM_0:
+- -1117.542068362
+- 2781.134167805
+- 685.3707525289
+lf_AEX_AltPosEnd_NUM_2:
+- 38366277.04328011
+- 17386555.789726738
+- 1883443.5072278897
+lf_AEX_AltVelEnd_NUM_2:
+- -1265.1489164897132
+- 2718.721400909004
+- 679.1329830040389
+lf_AEX_AltGlobErrSteps_NUM_0.1:
+- 100.0
+- 500.0
+ls_AEX_AltGlobErr_PLOT_2.2:
+- plots/verlet_analysis/verlet_gpd_4lines.png
+- plots/verlet_analysis/verlet_position_magnitude.png
+- plots/timestep_comparisons_verlet/dt100s/keplerian_comparison_inclination.png
+- plots/timestep_comparisons_verlet/dt100s/keplerian_comparison_eccentricity.png
+- plots/timestep_comparisons_verlet/dt100s/keplerian_comparison_semi_major_axis.png
+- plots/timestep_comparisons_verlet/dt100s/keplerian_comparison_true_anomaly_arg_periapsis.png
+- plots/timestep_comparisons_verlet/dt100s/keplerian_comparison_raan.png
+lf_AEX_AltCumGlobErrSteps_NUM_0.1:
+- 1.0
+- 2.0
+- 5.0
+- 10.0
+- 20.0
+- 30.0
+- 50.0
+- 75.0
+- 100.0
+- 150.0
+- 200.0
+- 300.0
+- 500.0
+- 750.0
+- 1000.0
+- 1500.0
+- 2000.0
+- 5000.0
+- 10000.0
+- 20000.0
+ls_AEX_AltCumGlobErr_PLOT_2.2:
+- plots/summary/cgpd_vs_timestep_combined.png
+- plots/summary/cgpd_vs_timestep_verlet.png
+ss_AEX_AltObs_OIC_1.5: "1. (keplerian_comparison_inclination.png) The inclination\
+  \ residuals between Velocity Verlet and Euler implementations are on the order of\
+  \ 1e-13 degrees (much smaller than inclination values on the order of 1e1) and show\
+  \ a quasi-random pattern. \n        \n        2. (cgpd_vs_timestep_verlet.png) Unlike\
+  \ in the Euler implementation, the Velocity Verlet method shows a minimum in CGPD\
+  \ at an dt=300 s.\n\n        3. (verlet_position_magnitude.png) Verlet's orbital\
+  \ radius drift is negligible when compared to Euler's at both dt=100s and 500s."
+ss_AEX_AltInt_OIC_2.5: "1. The stability of the orbital radius confirms that the Velocity\
+  \ Verlet algorithm acts as a geometric integrator. Its symplectic nature ensures\
+  \ the conservation of the system's Hamiltonian, preventing the artificial orbital\
+  \ decay/expansion seen in non-symplectic methods like Euler.\n        \n       \
+  \ 2. The minimum in the CGPD curve at dt=300 s marks the crossover point between\
+  \ two distinct error regimes. Below this threshold, the total error is dominated\
+  \ by the accumulation of floating-point round-off errors (due to the excessive number\
+  \ of integration steps). Above this threshold, the error is dominated by the truncation\
+  \ error of the algorithm (which scales as O(Delta_t^2)). The observed minimum represents\
+  \ the optimal step size among the ones used for the study where the combined effect\
+  \ of both error sources is minimized."
+ss_AEX_AltCon_OIC_4: In the context of this assignment, the Velocity Verlet method
+  outperforms Euler in accuracy and stability for orbit propagation under a point-mass
+  Earth model
+ss_CEX_Explain_GEN_10: 'Code Excellence Features:
+
+
+  1. Fortran-Python Integration - Fortran prints parseable timing format, Python extracts
+  with regex for automated performance benchmarking
+
+
+  2. Object-Oriented Programming with Type Hints - OrbitPropagator class with @dataclass
+  for KeplerianElements, full type annotations throughout (numpy.ndarray, Optional,
+  Tuple) for maintainability and static analysis
+
+
+  3. ArgumentParser CLI Interface - Professional command-line interface in fetch_tle.py
+  with subcommands, custom URLs, and validation modes for automated TLE retrieval
+
+
+  4. Automated Answer Sheet Generation - 542-line script reads assignment requirements,
+  extracts 40+ answer keys programmatically using regex, glob patterns, and automatic
+  file discovery
+
+
+  5. Polymorphic File Loading - OrbitDataLoader class handles NPZ and TXT formats
+  with auto-detection via load_from_file(), returns consistent (times, positions,
+  velocities, name) tuple regardless of source format
+
+
+  6. Comprehensive Docstrings - 100+ docstrings following Google style across all
+  modules (~1500 lines of documentation)
+
+
+  7. Intelligent Directory Organization - Automatic subdirectory creation with systematic
+  naming (dt{N}s_{method}_output.txt), plots organized by method and timestep
+
+
+  8. Smart Caching and Conditional Execution - Shell scripts check existing files,
+  skip recomputation, only recompile if sources changed, batch processing support
+
+
+  9. Array Preallocation - Fortran arrays preallocated before loops, Python uses np.zeros_like()
+  to avoid append() operations (100x+ speedup measured)
+
+
+  10. Vectorized NumPy Operations - Batch processing of 2500+ timesteps, element-wise
+  operations on entire arrays, no Python loops in critical paths
+
+
+  11. Modular Source Code Structure - Separate files for gravity, integrators, analysis,
+  plotting; each with single clear responsibility
+
+
+  12. Input Arguments for Flexibility - Timestep arguments, custom output directories,
+  auto-discovery mode for available data
+
+
+  13. Git Ignore Best Practices - Excludes __pycache__, IDE settings, OS files, optional
+  large data exclusion patterns
+
+
+  14. Requirements.txt Dependency Management - Pinned versions for reproducibility,
+  one-command installation (pip install -r requirements.txt)
+
+
+  15. Automated TLE Downloading - Programmatic retrieval from CelesTrak with urllib,
+  graceful offline fallback, checksum validation
+
+
+  16. Regular Expression Parsing - Filename pattern extraction, TLE parsing, source
+  code analysis, timing value extraction from Fortran output
+
+
+  17. Script Importability - All scripts use __name__ == "__main__" for both execution
+  and import, enables unit testing and code reuse
+
+
+  18. Multi-Method Comparison Framework - Single plotting codebase handles Euler/Verlet/SGP4,
+  consistent color schemes, automated 4-line comparison plots
+
+
+  19. Error Handling with Validation - Try/except blocks in 8+ files, raises ValueError
+  for unsupported file formats, KeyError for missing NPZ data keys, FileNotFoundError
+  with descriptive error messages
+
+
+  20. ArgumentParser Implementation Details - fetch_tle.py includes --url flag for
+  custom CelesTrak URLs, --output-dir for custom save locations, --quiet flag to suppress
+  verbose output, plus epilog with usage examples
+
+
+  21. Axis Layering Control for Plot Clarity - matplotlib zorder management (ax.set_zorder(),
+  patch.set_visible(False)) ensures legends and text annotations render above all
+  plot lines, including twin y-axis residual curves (compute_position_difference_verlet.py)
+
+
+  22. Dual Y-Axis Visualization - All Keplerian comparison plots use twinx() for primary
+  values on left axis and residuals on right axis, with coordinated color coding (darkgreen
+  for residuals) and synchronized legends combining both axes
+
+
+  23. CLI Argument Flexibility Across Scripts - sys.argv parsing in 8 scripts: propagator_sgp4.py,
+  extract_initial_state.py, plot_keplerian.py, plot_combined_timesteps.py, plot_cgpd_vs_timestep.py,
+  plot_cgpd_combined.py, compute_position_difference.py, compute_position_difference_verlet.py
+  - enables custom timesteps, propagator selection, and output directories
+
+
+  24. Input Validation Suite - assert statement catches SGP4 failures (propagator_sgp4.py),
+  ValueError for array shape mismatches (keplerian.py), ValueError for collision detection
+  at origin (keplerian.py), ValueError for unsupported file formats (keplerian.py)
+  - comprehensive validation with descriptive error messages
+
+
+  25. Dependency Management with Pinned Versions - requirements.txt specifies pinned
+  versions for reproducibility, enables one-command installation (pip install -r requirements.txt)
+
+
+  26. Makefile Build System - Professional Makefile with 15+ targets (compile, euler,
+  verlet, sgp4, plots, analysis, answer-sheet, test, clean), automatic dependency
+  resolution, parallel CGPD analysis loop, color-coded output messages, configurable
+  timesteps via DT_TEST variable, comprehensive help documentation (make help), handles
+  Fortran compilation, Python script execution, and data pipeline orchestration -
+  replaces manual shell script invocation with industry-standard build automation'
+ss_MDT_AI_GEN_0: 'AI (GitHub Copilot) was used as a coding assistant for:
+
+  - Initial code generation (manually verified for correctness)
+
+  - Algorithm implementation (verified against textbooks)
+
+  - Debugging and code refactoring
+
+  - Documentation generation
+
+  - Spell checking and grammar correction
+
+
+  All AI-generated code was manually reviewed, tested against known results, and validated
+  against numerical methods literature.'
+sf_REG_WORKLOAD_GEN_0: 22
+ss_REG_FEEDBACK_GEN_0: It is good to explore numerical methods but I would appreciate
+  references to know what to read to understand the methods better.

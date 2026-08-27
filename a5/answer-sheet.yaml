@@ -1,0 +1,462 @@
+ls_MDT_OrbKepResPlot_SRC_0:
+- src/python/plotting/plot_keplerian_comparison.py
+ss_REG_OrbKepResPlot_CODE_1: "#!/usr/bin/env python3\n\"\"\"\nPlot Keplerian elements and residuals for SGP4, integrated,\
+  \ and optimized orbits.\n\"\"\"\n\nimport numpy as np\nimport matplotlib.pyplot as plt\nfrom pathlib import Path\n\n# Gravitational\
+  \ parameter for Earth (m^3/s^2)\nMU = 3.986004418e14\n\ndef cart_to_kep(r, v, mu=MU):\n    \"\"\"\n    Convert Cartesian\
+  \ state (position, velocity) to Keplerian elements.\n    \n    Parameters:\n    -----------\n    r : array_like (3,)\n \
+  \       Position vector [m]\n    v : array_like (3,)\n        Velocity vector [m/s]\n    mu : float\n        Gravitational\
+  \ parameter [m^3/s^2]\n        \n    Returns:\n    --------\n    kep : dict\n        Keplerian elements:\n        - a: semi-major\
+  \ axis [km]\n        - e: eccentricity [-]\n        - i: inclination [deg]\n        - raan: right ascension of ascending\
+  \ node [deg]\n        - argp: argument of perigee [deg]\n        - nu: true anomaly [deg]\n    \"\"\"\n    r = np.array(r)\n\
+  \    v = np.array(v)\n    \n    # Magnitude\n    r_mag = np.linalg.norm(r)\n    v_mag = np.linalg.norm(v)\n    \n    # Specific\
+  \ angular momentum\n    h = np.cross(r, v)\n    h_mag = np.linalg.norm(h)\n    \n    # Node vector\n    k = np.array([0,\
+  \ 0, 1])\n    n = np.cross(k, h)\n    n_mag = np.linalg.norm(n)\n    \n    # Eccentricity vector\n    e_vec = ((v_mag**2\
+  \ - mu/r_mag) * r - np.dot(r, v) * v) / mu\n    e = np.linalg.norm(e_vec)\n    \n    # Specific orbital energy\n    epsilon\
+  \ = v_mag**2 / 2 - mu / r_mag\n    \n    # Semi-major axis\n    if abs(e - 1.0) > 1e-10:  # Not parabolic\n        a = -mu\
+  \ / (2 * epsilon)\n    else:\n        a = np.inf\n    \n    # Inclination\n    i = np.arccos(h[2] / h_mag)\n    \n    #\
+  \ RAAN\n    if n_mag > 1e-10:\n        raan = np.arccos(n[0] / n_mag)\n        if n[1] < 0:\n            raan = 2 * np.pi\
+  \ - raan\n    else:\n        raan = 0.0\n    \n    # Argument of perigee\n    if n_mag > 1e-10 and e > 1e-10:\n        argp\
+  \ = np.arccos(np.dot(n, e_vec) / (n_mag * e))\n        if e_vec[2] < 0:\n            argp = 2 * np.pi - argp\n    else:\n\
+  \        argp = 0.0\n    \n    # True anomaly\n    if e > 1e-10:\n        nu = np.arccos(np.dot(e_vec, r) / (e * r_mag))\n\
+  \        if np.dot(r, v) < 0:\n            nu = 2 * np.pi - nu\n    else:\n        nu = 0.0\n    \n    return {\n      \
+  \  'a': a / 1000.0,  # Convert to km\n        'e': e,\n        'i': np.degrees(i),\n        'raan': np.degrees(raan),\n\
+  \        'argp': np.degrees(argp),\n        'nu': np.degrees(nu)\n    }\n\ndef load_orbit_data(filename):\n    \"\"\"Load\
+  \ orbit data from file.\"\"\"\n    data = np.loadtxt(filename, comments='#')\n    times = data[:, 0]\n    positions = data[:,\
+  \ 1:4]\n    velocities = data[:, 4:7]\n    return times, positions, velocities\n\ndef compute_keplerian_elements(times,\
+  \ positions, velocities):\n    \"\"\"Compute Keplerian elements for all time steps.\"\"\"\n    n_steps = len(times)\n  \
+  \  kep_elements = {\n        'a': np.zeros(n_steps),\n        'e': np.zeros(n_steps),\n        'i': np.zeros(n_steps),\n\
+  \        'raan': np.zeros(n_steps),\n        'argp': np.zeros(n_steps),\n        'nu': np.zeros(n_steps)\n    }\n    \n\
+  \    for i in range(n_steps):\n        kep = cart_to_kep(positions[i], velocities[i])\n        for key in kep_elements:\n\
+  \            kep_elements[key][i] = kep[key]\n    \n    return kep_elements\n\ndef main():\n    print(\"=\"*60)\n    print(\"\
+  Keplerian Elements and Residuals Analysis\")\n    print(\"=\"*60)\n    print()\n    \n    # Load orbit data\n    print(\"\
+  Loading orbit data...\")\n    \n    # Load SGP4 orbit\n    print(\"  - Loading SGP4 orbit...\")\n    sgp4_data = np.load('data/sgp4_reference/orbit_propagation.npz')\n\
+  \    times_jd = sgp4_data['times_jd']\n    # Convert Julian date to seconds from start (JD is in two parts: integer and\
+  \ fraction)\n    jd_full = times_jd[:, 0] + times_jd[:, 1]\n    sgp4_times = (jd_full - jd_full[0]) * 86400.0  # JD to seconds\n\
+  \    sgp4_positions = sgp4_data['positions'] * 1000.0  # km to m\n    sgp4_velocities = sgp4_data['velocities'] * 1000.0\
+  \  # km/s to m/s\n    \n    # Load integrated orbit\n    print(\"  - Loading integrated orbit...\")\n    times_int, pos_int,\
+  \ vel_int = load_orbit_data('data/outputs_all/integrated_orbit.txt')\n    \n    # Load optimized orbit\n    print(\"  -\
+  \ Loading optimized orbit...\")\n    times_opt, pos_opt, vel_opt = load_orbit_data('data/outputs_all/optimized_orbit.txt')\n\
+  \    \n    # Compute Keplerian elements\n    print()\n    print(\"Computing Keplerian elements...\")\n    print(\"  - SGP4\
+  \ orbit...\")\n    kep_sgp4 = compute_keplerian_elements(sgp4_times, sgp4_positions, sgp4_velocities)\n    \n    print(\"\
+  \  - Integrated orbit...\")\n    kep_int = compute_keplerian_elements(times_int, pos_int, vel_int)\n    \n    print(\" \
+  \ - Optimized orbit...\")\n    kep_opt = compute_keplerian_elements(times_opt, pos_opt, vel_opt)\n    \n    # Interpolate\
+  \ integrated and optimized orbits to SGP4 times for fair comparison\n    print()\n    print(\"Interpolating orbits to common\
+  \ time domain...\")\n    kep_int_interp = {}\n    kep_opt_interp = {}\n    for key in ['a', 'e', 'i', 'raan', 'argp', 'nu']:\n\
+  \        kep_int_interp[key] = np.interp(sgp4_times, times_int, kep_int[key])\n        kep_opt_interp[key] = np.interp(sgp4_times,\
+  \ times_opt, kep_opt[key])\n    \n    # Compute argument of latitude (true anomaly + argument of periapsis)\n    u_sgp4\
+  \ = kep_sgp4['nu'] + kep_sgp4['argp']\n    u_int = kep_int_interp['nu'] + kep_int_interp['argp']\n    u_opt = kep_opt_interp['nu']\
+  \ + kep_opt_interp['argp']\n    \n    # Convert times to hours\n    times_sgp4_hr = sgp4_times / 3600.0\n    \n    # Create\
+  \ plots\n    print()\n    print(\"Creating plots...\")\n    \n    # Define the 5 elements to plot\n    elements_to_plot\
+  \ = [\n        ('i', 'Inclination', '[deg]', kep_sgp4['i'], kep_int_interp['i'], kep_opt_interp['i']),\n        ('e', 'Eccentricity',\
+  \ '[-]', kep_sgp4['e'], kep_int_interp['e'], kep_opt_interp['e']),\n        ('a', 'Semi-major Axis', '[km]', kep_sgp4['a'],\
+  \ kep_int_interp['a'], kep_opt_interp['a']),\n        ('u', 'Argument of Latitude', '[deg]', u_sgp4, u_int, u_opt),\n  \
+  \      ('raan', 'RAAN', '[deg]', kep_sgp4['raan'], kep_int_interp['raan'], kep_opt_interp['raan'])\n    ]\n    \n    output_files\
+  \ = []\n    \n    for key, name, unit, sgp4_vals, int_vals, opt_vals in elements_to_plot:\n        print(f\"  - Creating\
+  \ plot for {name}...\")\n        \n        fig, ax1 = plt.subplots(figsize=(12, 7))\n        \n        # Primary y-axis:\
+  \ Plot the three orbits\n        ax1.set_xlabel('Time [hours]', fontsize=12, fontweight='bold')\n        ax1.set_ylabel(f'{name}\
+  \ {unit}', fontsize=12, fontweight='bold', color='black')\n        \n        line1 = ax1.plot(times_sgp4_hr, sgp4_vals,\
+  \ 'b-', label='SGP4', \n                        linewidth=2, alpha=0.8)\n        line2 = ax1.plot(times_sgp4_hr, int_vals,\
+  \ 'g--', label='Integrated', \n                        linewidth=1.5, alpha=0.7)\n        line3 = ax1.plot(times_sgp4_hr,\
+  \ opt_vals, 'r:', label='Optimized', \n                        linewidth=1.5, alpha=0.7)\n        \n        ax1.tick_params(axis='y',\
+  \ labelcolor='black')\n        ax1.grid(True, alpha=0.3)\n        \n        # Secondary y-axis: Plot the differences\n \
+  \       ax2 = ax1.twinx()\n        ax2.set_ylabel(f'{name} Difference {unit}', fontsize=12, fontweight='bold', color='purple')\n\
+  \        \n        # Compute residuals\n        residual_int = int_vals - sgp4_vals\n        residual_opt = opt_vals - sgp4_vals\n\
+  \        \n        # Handle angle wrapping for angular elements\n        if key in ['i', 'u', 'raan', 'argp', 'nu']:\n \
+  \           residual_int = np.arctan2(np.sin(np.radians(residual_int)), \n                                     np.cos(np.radians(residual_int)))\n\
+  \            residual_int = np.degrees(residual_int)\n            \n            residual_opt = np.arctan2(np.sin(np.radians(residual_opt)),\
+  \ \n                                     np.cos(np.radians(residual_opt)))\n            residual_opt = np.degrees(residual_opt)\n\
+  \        \n        line4 = ax2.plot(times_sgp4_hr, residual_int, 'm-', \n                        label='Integrated - SGP4',\
+  \ linewidth=1.5, alpha=0.7)\n        line5 = ax2.plot(times_sgp4_hr, residual_opt, 'orange', linestyle='-',\n          \
+  \              label='Optimized - SGP4', linewidth=1.5, alpha=0.7)\n        \n        ax2.tick_params(axis='y', labelcolor='purple')\n\
+  \        ax2.axhline(0, color='gray', linestyle='--', alpha=0.5, linewidth=1)\n        \n        # Title\n        plt.title(f'{name}\
+  \ Comparison: SGP4 vs Integrated vs Optimized', \n                 fontsize=14, fontweight='bold', pad=20)\n        \n \
+  \       # Combined legend\n        lines = line1 + line2 + line3 + line4 + line5\n        labels = [l.get_label() for l\
+  \ in lines]\n        ax1.legend(lines, labels, loc='upper left', bbox_to_anchor=(1.15, 1), \n                  framealpha=0.95,\
+  \ fontsize=9, edgecolor='gray')\n        \n        # Adjust layout\n        plt.tight_layout(rect=[0, 0, 0.88, 0.96])\n\
+  \        \n        # Save figure\n        output_file = f'plots/keplerian/{key}_comparison.png'\n        Path(output_file).parent.mkdir(parents=True,\
+  \ exist_ok=True)\n        plt.savefig(output_file, dpi=300, bbox_inches='tight')\n        print(f\"    Saved: {output_file}\"\
+  )\n        output_files.append(output_file)\n        plt.close(fig)\n        \n        # Print statistics\n        rms_int\
+  \ = np.sqrt(np.mean(residual_int**2))\n        rms_opt = np.sqrt(np.mean(residual_opt**2))\n        print(f\"    {key.upper()}:\
+  \ RMS error (Integrated) = {rms_int:.6e}, RMS error (Optimized) = {rms_opt:.6e}\")\n    \n    print()\n    print(\"=\"*60)\n\
+  \    print(\"Analysis complete!\")\n    print(f\"Created {len(output_files)} plots\")\n    print(\"=\"*60)\n\nif __name__\
+  \ == '__main__':\n    main()\n"
+ls_MDT_AltPlot_SRC_0:
+- src/python/plotting/plot_magnitude_comparison.py
+- src/python/plotting/plot_optimization_convergence.py
+ss_REG_AltPlot_CODE_0: "#!/usr/bin/env python3\n\"\"\"\nPlot position and velocity magnitudes for SGP4, integrated, and optimized\
+  \ orbits.\n\"\"\"\n\nimport numpy as np\nimport matplotlib.pyplot as plt\nfrom pathlib import Path\n\ndef load_orbit_data(filename):\n\
+  \    \"\"\"Load orbit data from file.\"\"\"\n    data = np.loadtxt(filename, comments='#')\n    times = data[:, 0]\n   \
+  \ positions = data[:, 1:4]\n    velocities = data[:, 4:7]\n    return times, positions, velocities\n\ndef main():\n    print(\"\
+  =\"*60)\n    print(\"Position and Velocity Magnitudes Analysis\")\n    print(\"=\"*60)\n    print()\n    \n    # Load orbit\
+  \ data\n    print(\"Loading orbit data...\")\n    \n    # SGP4 orbit\n    print(\"  - Loading SGP4 orbit...\")\n    sgp4_data\
+  \ = np.load('data/sgp4_reference/orbit_propagation.npz')\n    times_jd = sgp4_data['times_jd']\n    jd_full = times_jd[:,\
+  \ 0] + times_jd[:, 1]\n    times_sgp4 = (jd_full - jd_full[0]) * 86400.0  # seconds\n    pos_sgp4 = sgp4_data['positions']\
+  \ * 1000.0  # km to m\n    vel_sgp4 = sgp4_data['velocities'] * 1000.0  # km/s to m/s\n    \n    # Integrated orbit\n  \
+  \  print(\"  - Loading integrated orbit...\")\n    times_int, pos_int, vel_int = load_orbit_data('data/outputs_all/integrated_orbit.txt')\n\
+  \    \n    # Optimized orbit\n    print(\"  - Loading optimized orbit...\")\n    times_opt, pos_opt, vel_opt = load_orbit_data('data/outputs_all/optimized_orbit.txt')\n\
+  \    \n    # Convert times to hours\n    times_sgp4_hr = times_sgp4 / 3600.0\n    times_int_hr = times_int / 3600.0\n  \
+  \  times_opt_hr = times_opt / 3600.0\n    \n    # Compute magnitudes\n    print()\n    print(\"Computing magnitudes...\"\
+  )\n    r_mag_sgp4 = np.linalg.norm(pos_sgp4, axis=1) / 1000.0  # km\n    v_mag_sgp4 = np.linalg.norm(vel_sgp4, axis=1) \
+  \ # m/s\n    \n    r_mag_int = np.linalg.norm(pos_int, axis=1) / 1000.0  # km\n    v_mag_int = np.linalg.norm(vel_int, axis=1)\
+  \  # m/s\n    \n    r_mag_opt = np.linalg.norm(pos_opt, axis=1) / 1000.0  # km\n    v_mag_opt = np.linalg.norm(vel_opt,\
+  \ axis=1)  # m/s\n    \n    # Find common time range to avoid extrapolation issues\n    t_max_common = min(times_sgp4[-1],\
+  \ times_int[-1], times_opt[-1])\n    sgp4_mask = times_sgp4 <= t_max_common\n    times_sgp4_common = times_sgp4[sgp4_mask]\n\
+  \    pos_sgp4_common = pos_sgp4[sgp4_mask]\n    vel_sgp4_common = vel_sgp4[sgp4_mask]\n    \n    print(f\"  Using common\
+  \ time range: 0 to {t_max_common:.1f} s ({len(times_sgp4_common)} points)\")\n    \n    # Interpolate integrated and optimized\
+  \ to common SGP4 times for difference calculation\n    pos_int_interp = np.array([np.interp(times_sgp4_common, times_int,\
+  \ pos_int[:, i]) for i in range(3)]).T\n    vel_int_interp = np.array([np.interp(times_sgp4_common, times_int, vel_int[:,\
+  \ i]) for i in range(3)]).T\n    \n    pos_opt_interp = np.array([np.interp(times_sgp4_common, times_opt, pos_opt[:, i])\
+  \ for i in range(3)]).T\n    vel_opt_interp = np.array([np.interp(times_sgp4_common, times_opt, vel_opt[:, i]) for i in\
+  \ range(3)]).T\n    \n    # Compute difference vectors, then their magnitudes\n    pos_diff_int = pos_int_interp - pos_sgp4_common\n\
+  \    pos_diff_opt = pos_opt_interp - pos_sgp4_common\n    vel_diff_int = vel_int_interp - vel_sgp4_common\n    vel_diff_opt\
+  \ = vel_opt_interp - vel_sgp4_common\n    \n    r_diff_mag_int = np.linalg.norm(pos_diff_int, axis=1) / 1000.0  # km\n \
+  \   r_diff_mag_opt = np.linalg.norm(pos_diff_opt, axis=1) / 1000.0  # km\n    v_diff_mag_int = np.linalg.norm(vel_diff_int,\
+  \ axis=1)  # m/s\n    v_diff_mag_opt = np.linalg.norm(vel_diff_opt, axis=1)  # m/s\n    \n    print()\n    print(\"Creating\
+  \ plots...\")\n    \n    # Plot 1: Position magnitude\n    fig, ax1 = plt.subplots(figsize=(12, 7))\n    \n    # Primary\
+  \ y-axis: position magnitudes\n    ax1.plot(times_sgp4_hr, r_mag_sgp4, 'b-', label='SGP4', linewidth=2, alpha=0.8)\n   \
+  \ ax1.plot(times_int_hr, r_mag_int, 'g--', label='Integrated', linewidth=1.5, alpha=0.7)\n    ax1.plot(times_opt_hr, r_mag_opt,\
+  \ 'r:', label='Optimized', linewidth=1.5, alpha=0.7)\n    ax1.set_xlabel('Time [hours]', fontsize=12, fontweight='bold')\n\
+  \    ax1.set_ylabel('Position Magnitude [km]', fontsize=12, fontweight='bold', color='k')\n    ax1.tick_params(axis='y',\
+  \ labelcolor='k')\n    ax1.grid(True, alpha=0.3)\n    \n    # Secondary y-axis: difference magnitudes\n    ax2 = ax1.twinx()\n\
+  \    times_sgp4_hr_common = times_sgp4_common / 3600.0\n    ax2.plot(times_sgp4_hr_common, r_diff_mag_int, 'm-', label='Integrated\
+  \ - SGP4', linewidth=1.5, alpha=0.7)\n    ax2.plot(times_sgp4_hr_common, r_diff_mag_opt, 'orange', linestyle='-', label='Optimized\
+  \ - SGP4', linewidth=1.5, alpha=0.7)\n    ax2.set_ylabel('Position Difference Magnitude [km]', fontsize=12, fontweight='bold',\
+  \ color='purple')\n    ax2.tick_params(axis='y', labelcolor='purple')\n    \n    # Title\n    plt.title('Position Magnitude\
+  \ Evolution', fontsize=14, fontweight='bold', pad=20)\n    \n    # Combined legend\n    lines1, labels1 = ax1.get_legend_handles_labels()\n\
+  \    lines2, labels2 = ax2.get_legend_handles_labels()\n    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left',\
+  \ \n               bbox_to_anchor=(1.15, 1), framealpha=0.95, fontsize=9, \n               edgecolor='gray')\n    \n   \
+  \ # Adjust layout to prevent label clipping\n    plt.tight_layout(rect=[0, 0, 0.85, 0.96])\n    \n    output_file = 'plots/magnitudes/position_magnitude.png'\n\
+  \    Path(output_file).parent.mkdir(parents=True, exist_ok=True)\n    plt.savefig(output_file, dpi=300, bbox_inches='tight')\n\
+  \    print(f\"  Saved: {output_file}\")\n    \n    # Print statistics\n    print(f\"    Position RMS difference (Integrated):\
+  \ {np.sqrt(np.mean(r_diff_mag_int**2)):.6f} km\")\n    print(f\"    Position RMS difference (Optimized):  {np.sqrt(np.mean(r_diff_mag_opt**2)):.6f}\
+  \ km\")\n    \n    # Plot 2: Velocity magnitude\n    fig, ax1 = plt.subplots(figsize=(12, 7))\n    \n    # Primary y-axis:\
+  \ velocity magnitudes\n    ax1.plot(times_sgp4_hr, v_mag_sgp4, 'b-', label='SGP4', linewidth=2, alpha=0.8)\n    ax1.plot(times_int_hr,\
+  \ v_mag_int, 'g--', label='Integrated', linewidth=1.5, alpha=0.7)\n    ax1.plot(times_opt_hr, v_mag_opt, 'r:', label='Optimized',\
+  \ linewidth=1.5, alpha=0.7)\n    ax1.set_xlabel('Time [hours]', fontsize=12, fontweight='bold')\n    ax1.set_ylabel('Velocity\
+  \ Magnitude [m/s]', fontsize=12, fontweight='bold', color='k')\n    ax1.tick_params(axis='y', labelcolor='k')\n    ax1.grid(True,\
+  \ alpha=0.3)\n    \n    # Secondary y-axis: difference magnitudes\n    ax2 = ax1.twinx()\n    ax2.plot(times_sgp4_hr_common,\
+  \ v_diff_mag_int, 'm-', label='Integrated - SGP4', linewidth=1.5, alpha=0.7)\n    ax2.plot(times_sgp4_hr_common, v_diff_mag_opt,\
+  \ 'orange', linestyle='-', label='Optimized - SGP4', linewidth=1.5, alpha=0.7)\n    ax2.set_ylabel('Velocity Difference\
+  \ Magnitude [m/s]', fontsize=12, fontweight='bold', color='purple')\n    ax2.tick_params(axis='y', labelcolor='purple')\n\
+  \    \n    # Title\n    plt.title('Velocity Magnitude Evolution', fontsize=14, fontweight='bold', pad=20)\n    \n    # Combined\
+  \ legend\n    lines1, labels1 = ax1.get_legend_handles_labels()\n    lines2, labels2 = ax2.get_legend_handles_labels()\n\
+  \    ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left', \n               bbox_to_anchor=(1.15, 1), framealpha=0.95,\
+  \ fontsize=9, \n               edgecolor='gray')\n    \n    # Adjust layout to prevent label clipping\n    plt.tight_layout(rect=[0,\
+  \ 0, 0.85, 0.96])\n    \n    output_file = 'plots/magnitudes/velocity_magnitude.png'\n    plt.savefig(output_file, dpi=300,\
+  \ bbox_inches='tight')\n    print(f\"  Saved: {output_file}\")\n    \n    # Print statistics\n    print(f\"    Velocity\
+  \ RMS difference (Integrated): {np.sqrt(np.mean(v_diff_mag_int**2)):.6f} m/s\")\n    print(f\"    Velocity RMS difference\
+  \ (Optimized):  {np.sqrt(np.mean(v_diff_mag_opt**2)):.6f} m/s\")\n    \n    print()\n    print(\"=\"*60)\n    print(\"Analysis\
+  \ complete!\")\n    print(\"=\"*60)\n\nif __name__ == '__main__':\n    main()\n"
+ss_REG_Language_GEN_0: Fortran and Python
+ls_MDT_TLE_GEN_0:
+- USA 149 (DSP 20)
+- 1 26356U 00024A   25346.54187369  .00000098  00000+0  00000+0 0  9996
+- 2 26356  13.0295  13.1615 0000707 201.7239 256.6381  1.00263881 31047
+sf_MDT_OrbTimeIni_NUM_0: 0.0
+sf_MDT_OrbTimeEnd_NUM_0: 17280.000016
+sf_MDT_OrbTimeStep_NUM_0: 115.973139
+lf_REG_OrbPosIni_NUM_0:
+- -15220853.085337
+- 38179792.29058
+- 9410543.412619
+lf_REG_OrbVelIni_NUM_0:
+- -2862.972835
+- -1116.669286
+- -101.037714
+lf_REG_OrbPosEnd_NUM_1:
+- -42034553.691048
+- -2905512.6379
+- 1557999.690594
+lf_REG_OrbVelEnd_NUM_1:
+- 181.456739
+- -2992.229141
+- -684.30242
+ss_MDT_Integrator_GEN_0: Velocity Verlet
+ls_MDT_ForceModelComponents_GEN_0:
+- J2
+- SRP
+- SUN
+- MOON
+lf_REG_SunPos_GEN_0:
+- -25974898477.18668
+- -133030418468.754
+- -57666230930.19044
+lf_REG_MoonPos_GEN_0:
+- -388109707.712869
+- 56348809.520081
+- 18772947.5421
+sf_REG_EulerTimeTotal_NUM_0.5: 0.033
+sf_REG_EulerTimeEff_NUM_0.5: 0.00022
+lf_REG_IntPosIni_NUM_0:
+- -15220853.085337
+- 38179792.29058
+- 9410543.412619
+lf_REG_IntVelIni_NUM_0:
+- -2862.972835
+- -1116.669286
+- -101.037714
+lf_REG_IntPosEnd_NUM_1:
+- -42035809.441824
+- -2906814.329114
+- 1557687.580236
+lf_REG_IntVelEnd_NUM_1:
+- 181.379605
+- -2992.173233
+- -684.278526
+ls_REG_OrbKep_PLOT_1:
+- plots/sgp4/keplerian_elements_sgp4_plot1.png
+- plots/sgp4/keplerian_elements_sgp4_plot2.png
+ls_REG_EulerKep_PLOT_1:
+- plots/integrated/keplerian_elements_custom_plot1.png
+- plots/integrated/keplerian_elements_custom_plot2.png
+ls_MDT_ObjFun_SRC_0:
+- src/fortran/modules/objective_function.f90
+ss_REG_ObjFun_CODE_1: "module objective_function\n    use gravity, only: dp\n    implicit none\n    \n    ! SGP4 reference\
+  \ orbit data (will be loaded from file)\n    integer :: n_sgp4_steps\n    real(dp), allocatable :: sgp4_times(:)       \
+  \ ! Time array [s]\n    real(dp), allocatable :: sgp4_positions(:,:)  ! Positions [m], shape (3, n_steps)\n    real(dp),\
+  \ allocatable :: sgp4_velocities(:,:) ! Velocities [m/s], shape (3, n_steps)\n    \ncontains\n\n    ! Load SGP4 reference\
+  \ orbit from file\n    subroutine load_sgp4_reference(filename)\n        character(len=*), intent(in) :: filename\n    \
+  \    integer :: iostat, i, unit_num\n        real(dp) :: dummy_jd, dummy_fr\n        \n        ! Open file\n        unit_num\
+  \ = 15\n        open(unit=unit_num, file=filename, status='old', action='read', iostat=iostat)\n        if (iostat /= 0)\
+  \ then\n            print *, \"Error: Could not open SGP4 reference file: \", trim(filename)\n            stop\n       \
+  \ end if\n        \n        ! Count number of data lines (skip header comments)\n        n_sgp4_steps = 0\n        do\n\
+  \            read(unit_num, *, iostat=iostat)\n            if (iostat /= 0) exit\n            n_sgp4_steps = n_sgp4_steps\
+  \ + 1\n        end do\n        \n        ! Allocate arrays\n        allocate(sgp4_times(n_sgp4_steps))\n        allocate(sgp4_positions(3,\
+  \ n_sgp4_steps))\n        allocate(sgp4_velocities(3, n_sgp4_steps))\n        \n        ! Rewind and read data\n       \
+  \ rewind(unit_num)\n        do i = 1, n_sgp4_steps\n            ! Format: time(s) x(m) y(m) z(m) vx(m/s) vy(m/s) vz(m/s)\n\
+  \            read(unit_num, *) sgp4_times(i), &\n                              sgp4_positions(1, i), sgp4_positions(2, i),\
+  \ sgp4_positions(3, i), &\n                              sgp4_velocities(1, i), sgp4_velocities(2, i), sgp4_velocities(3,\
+  \ i)\n        end do\n        \n        close(unit_num)\n        \n        print *, \"Loaded SGP4 reference orbit:\"\n \
+  \       print *, \"  Number of time steps: \", n_sgp4_steps\n        print *, \"  Time range [s]: \", sgp4_times(1), \"\
+  \ to \", sgp4_times(n_sgp4_steps)\n        \n    end subroutine load_sgp4_reference\n    \n    ! Compute CGPD (Cumulative\
+  \ Global Position Difference) as RMS of position differences\n    ! Inputs:\n    !   - integrated_positions: (3, n_steps)\
+  \ array of integrated orbit positions [m]\n    ! Output:\n    !   - cgpd: RMS of position difference magnitudes [m]\n  \
+  \  function compute_cgpd(integrated_positions, n_steps) result(cgpd)\n        integer, intent(in) :: n_steps\n        real(dp),\
+  \ intent(in) :: integrated_positions(3, n_steps)\n        real(dp) :: cgpd\n        \n        real(dp) :: pos_diff(3)\n\
+  \        real(dp) :: pos_diff_mag\n        real(dp) :: sum_squared_diff\n        integer :: i, n_common\n        \n    \
+  \    ! Use the minimum of the two sizes to avoid out-of-bounds\n        n_common = min(n_steps, n_sgp4_steps)\n        \n\
+  \        if (abs(n_steps - n_sgp4_steps) > 1) then\n            print *, \"Warning: Significant mismatch in step count\"\
+  \n            print *, \"  Integrated steps: \", n_steps\n            print *, \"  SGP4 steps: \", n_sgp4_steps\n      \
+  \      print *, \"  Using first \", n_common, \" steps for comparison\"\n        end if\n        \n        sum_squared_diff\
+  \ = 0.0_dp\n        \n        do i = 1, n_common\n            ! Compute position difference vector\n            pos_diff\
+  \ = integrated_positions(:, i) - sgp4_positions(:, i)\n            \n            ! Compute magnitude of position difference\n\
+  \            pos_diff_mag = sqrt(pos_diff(1)**2 + pos_diff(2)**2 + pos_diff(3)**2)\n            \n            ! Accumulate\
+  \ squared differences\n            sum_squared_diff = sum_squared_diff + pos_diff_mag**2\n        end do\n        \n   \
+  \     ! Compute RMS\n        cgpd = sqrt(sum_squared_diff / real(n_common, dp))\n        \n    end function compute_cgpd\n\
+  \    \n    ! Cleanup memory\n    subroutine cleanup_sgp4_reference()\n        if (allocated(sgp4_times)) deallocate(sgp4_times)\n\
+  \        if (allocated(sgp4_positions)) deallocate(sgp4_positions)\n        if (allocated(sgp4_velocities)) deallocate(sgp4_velocities)\n\
+  \    end subroutine cleanup_sgp4_reference\n\nend module objective_function\n"
+sf_REG_CGPDInt_NUM_1: 1106.991171
+ss_MDT_OptName_GEN_0: Gradient
+ls_MDT_Opt_SRC_0:
+- src/fortran/optimization/gradient_descent.f90
+ss_REG_Opt_CODE_6: "module gradient_descent_mod\n    use gravity, only: dp\n    implicit none\n    \n    ! Optimization parameters\n\
+  \    real(dp), parameter :: DEFAULT_LEARNING_RATE = 1.0e-5_dp\n    real(dp), parameter :: DEFAULT_TOLERANCE = 1.0e-10_dp\n\
+  \    integer, parameter :: DEFAULT_MAX_ITERATIONS = 1e5\n    real(dp), parameter :: FINITE_DIFF_EPSILON = 1.0e-5_dp  ! For\
+  \ numerical gradient\n    \ncontains\n\n    ! Compute numerical gradient using finite differences\n    ! Input:\n    ! \
+  \  - obj_func: objective function to differentiate\n    !   - x: current point (6D state perturbation)\n    ! Output:\n\
+  \    !   - gradient: 6D gradient vector\n    subroutine compute_gradient(obj_func, x, gradient)\n        interface\n   \
+  \         function obj_func(delta_y0) result(f)\n                import :: dp\n                real(dp), intent(in) :: delta_y0(6)\n\
+  \                real(dp) :: f\n            end function obj_func\n        end interface\n        \n        real(dp), intent(in)\
+  \ :: x(6)\n        real(dp), intent(out) :: gradient(6)\n        \n        real(dp) :: x_plus(6), x_minus(6)\n        real(dp)\
+  \ :: f_plus, f_minus\n        integer :: i\n        \n        ! Compute gradient using central finite differences\n    \
+  \    ! df/dx_i \u2248 (f(x + \u03B5*e_i) - f(x - \u03B5*e_i)) / (2*\u03B5)\n        do i = 1, 6\n            x_plus = x\n\
+  \            x_minus = x\n            \n            x_plus(i) = x(i) + FINITE_DIFF_EPSILON\n            x_minus(i) = x(i)\
+  \ - FINITE_DIFF_EPSILON\n            \n            f_plus = obj_func(x_plus)\n            f_minus = obj_func(x_minus)\n\
+  \            \n            gradient(i) = (f_plus - f_minus) / (2.0_dp * FINITE_DIFF_EPSILON)\n        end do\n        \n\
+  \    end subroutine compute_gradient\n    \n    ! Gradient descent optimization\n    ! Inputs:\n    !   - obj_func: objective\
+  \ function to minimize\n    !   - x0: initial guess (6D)\n    !   - learning_rate: step size for gradient descent\n    !\
+  \   - tolerance: convergence criterion (gradient norm)\n    !   - max_iterations: maximum number of iterations\n    ! Outputs:\n\
+  \    !   - x_opt: optimized solution\n    !   - f_opt: optimal function value\n    !   - n_iterations: number of iterations\
+  \ performed\n    !   - converged: whether algorithm converged\n    !   - history_x: history of x values (6, n_iterations)\n\
+  \    !   - history_f: history of objective function values (n_iterations)\n    subroutine gradient_descent(obj_func, x0,\
+  \ x_opt, f_opt, n_iterations, converged, &\n                                history_x, history_f, learning_rate_in, tolerance_in,\
+  \ max_iter_in)\n        interface\n            function obj_func(delta_y0) result(f)\n                import :: dp\n   \
+  \             real(dp), intent(in) :: delta_y0(6)\n                real(dp) :: f\n            end function obj_func\n  \
+  \      end interface\n        \n        real(dp), intent(in) :: x0(6)\n        real(dp), intent(out) :: x_opt(6)\n     \
+  \   real(dp), intent(out) :: f_opt\n        integer, intent(out) :: n_iterations\n        logical, intent(out) :: converged\n\
+  \        real(dp), allocatable, intent(out) :: history_x(:,:)\n        real(dp), allocatable, intent(out) :: history_f(:)\n\
+  \        real(dp), optional, intent(in) :: learning_rate_in\n        real(dp), optional, intent(in) :: tolerance_in\n  \
+  \      integer, optional, intent(in) :: max_iter_in\n        \n        real(dp) :: x_current(6), gradient(6)\n        real(dp)\
+  \ :: f_current, grad_norm\n        real(dp) :: x_best(6), f_best\n        real(dp) :: learning_rate, tolerance\n       \
+  \ integer :: max_iterations, iter\n        \n        ! Set parameters\n        learning_rate = DEFAULT_LEARNING_RATE\n \
+  \       if (present(learning_rate_in)) learning_rate = learning_rate_in\n        \n        tolerance = DEFAULT_TOLERANCE\n\
+  \        if (present(tolerance_in)) tolerance = tolerance_in\n        \n        max_iterations = DEFAULT_MAX_ITERATIONS\n\
+  \        if (present(max_iter_in)) max_iterations = max_iter_in\n        \n        ! Allocate history arrays\n        allocate(history_x(6,\
+  \ max_iterations))\n        allocate(history_f(max_iterations))\n        \n        ! Initialize\n        x_current = x0\n\
+  \        converged = .false.\n        f_best = huge(1.0_dp)\n        x_best = x0\n        \n        ! Optimization loop\n\
+  \        do iter = 1, max_iterations\n            ! Evaluate objective function\n            f_current = obj_func(x_current)\n\
+  \            \n            ! Keep track of best solution\n            if (f_current < f_best) then\n                f_best\
+  \ = f_current\n                x_best = x_current\n            end if\n            \n            ! Store history\n     \
+  \       history_x(:, iter) = x_current\n            history_f(iter) = f_current\n            \n            ! Compute gradient\n\
+  \            call compute_gradient(obj_func, x_current, gradient)\n            \n            ! Check convergence\n     \
+  \       grad_norm = sqrt(sum(gradient**2))\n            if (grad_norm < tolerance) then\n                converged = .true.\n\
+  \                n_iterations = iter\n                exit\n            end if\n            \n            ! Update x using\
+  \ gradient descent: x_new = x_old - \u03B1 * \u2207f\n            x_current = x_current - learning_rate * gradient\n   \
+  \         \n        end do\n        \n        if (.not. converged) then\n            n_iterations = max_iterations\n   \
+  \     end if\n        \n        ! Set outputs to best solution found (not last iteration)\n        x_opt = x_best\n    \
+  \    f_opt = f_best\n        \n    end subroutine gradient_descent\n    \n    ! Gradient descent with adaptive learning\
+  \ rate (Adam-like)\n    subroutine gradient_descent_adaptive(obj_func, x0, x_opt, f_opt, n_iterations, converged, &\n  \
+  \                                      history_x, history_f, learning_rate_in, tolerance_in, max_iter_in)\n        interface\n\
+  \            function obj_func(delta_y0) result(f)\n                import :: dp\n                real(dp), intent(in) ::\
+  \ delta_y0(6)\n                real(dp) :: f\n            end function obj_func\n        end interface\n        \n     \
+  \   real(dp), intent(in) :: x0(6)\n        real(dp), intent(out) :: x_opt(6)\n        real(dp), intent(out) :: f_opt\n \
+  \       integer, intent(out) :: n_iterations\n        logical, intent(out) :: converged\n        real(dp), allocatable,\
+  \ intent(out) :: history_x(:,:)\n        real(dp), allocatable, intent(out) :: history_f(:)\n        real(dp), optional,\
+  \ intent(in) :: learning_rate_in\n        real(dp), optional, intent(in) :: tolerance_in\n        integer, optional, intent(in)\
+  \ :: max_iter_in\n        \n        real(dp) :: x_current(6), gradient(6)\n        real(dp) :: f_current, f_prev, grad_norm\n\
+  \        real(dp) :: x_best(6), f_best\n        real(dp) :: learning_rate, tolerance\n        real(dp) :: momentum(6), velocity(6)\n\
+  \        real(dp) :: beta1, beta2, epsilon\n        integer :: max_iterations, iter\n        \n        ! Set parameters\n\
+  \        learning_rate = DEFAULT_LEARNING_RATE\n        if (present(learning_rate_in)) learning_rate = learning_rate_in\n\
+  \        \n        tolerance = DEFAULT_TOLERANCE\n        if (present(tolerance_in)) tolerance = tolerance_in\n        \n\
+  \        max_iterations = DEFAULT_MAX_ITERATIONS\n        if (present(max_iter_in)) max_iterations = max_iter_in\n     \
+  \   \n        ! Momentum parameters (Adam-like)\n        beta1 = 0.9_dp\n        beta2 = 0.999_dp\n        epsilon = 1.0e-8_dp\n\
+  \        \n        ! Allocate history arrays\n        allocate(history_x(6, max_iterations))\n        allocate(history_f(max_iterations))\n\
+  \        \n        ! Initialize\n        x_current = x0\n        momentum = 0.0_dp\n        velocity = 0.0_dp\n        converged\
+  \ = .false.\n        f_prev = huge(1.0_dp)\n        f_best = huge(1.0_dp)\n        x_best = x0\n        \n        ! Optimization\
+  \ loop\n        do iter = 1, max_iterations\n            ! Evaluate objective function\n            f_current = obj_func(x_current)\n\
+  \            \n            ! Keep track of best solution\n            if (f_current < f_best) then\n                f_best\
+  \ = f_current\n                x_best = x_current\n            end if\n            \n            ! Store history\n     \
+  \       history_x(:, iter) = x_current\n            history_f(iter) = f_current\n            \n            ! Compute gradient\n\
+  \            call compute_gradient(obj_func, x_current, gradient)\n            \n            ! Check convergence\n     \
+  \       grad_norm = sqrt(sum(gradient**2))\n            if (grad_norm < tolerance) then\n                converged = .true.\n\
+  \                n_iterations = iter\n                exit\n            end if\n            \n            ! Check for function\
+  \ value improvement\n            if (abs(f_current - f_prev) < tolerance * abs(f_prev)) then\n                converged\
+  \ = .true.\n                n_iterations = iter\n                exit\n            end if\n            \n            ! Update\
+  \ momentum and velocity (Adam-like)\n            momentum = beta1 * momentum + (1.0_dp - beta1) * gradient\n           \
+  \ velocity = beta2 * velocity + (1.0_dp - beta2) * gradient**2\n            \n            ! Compute bias-corrected estimates\n\
+  \            ! (simplified version, not exact Adam)\n            \n            ! Update x\n            x_current = x_current\
+  \ - learning_rate * momentum / (sqrt(velocity) + epsilon)\n            \n            f_prev = f_current\n            \n\
+  \        end do\n        \n        if (.not. converged) then\n            n_iterations = max_iterations\n        end if\n\
+  \        \n        ! Set outputs to best solution found (not last iteration)\n        x_opt = x_best\n        f_opt = f_best\n\
+  \        \n    end subroutine gradient_descent_adaptive\n    \nend module gradient_descent_mod\n"
+sf_REG_OptTotal_NUM_0.5: 13.078839
+sf_REG_OptEff_NUM_0.5: 0.102983
+lf_REG_OptPosIni_NUM_0:
+- -15220852.926119
+- 38179792.243719
+- 9410543.276358
+lf_REG_OptVelIni_NUM_0:
+- -2862.887182
+- -1116.58073
+- -101.01506
+lf_REG_OptPosEnd_NUM_0:
+- -42034436.46946
+- -2905686.772767
+- 1557963.44506
+lf_REG_OptVelEnd_NUM_0:
+- 181.49824
+- -2992.157761
+- -684.279077
+sf_REG_CGPDOpt_NUM_1: 116.723675
+ls_REG_Conv_PLOT_2:
+- plots/optimization/convergence.png
+ls_REG_OrbKepRes_PLOT_7:
+- plots/keplerian/i_comparison.png
+- plots/keplerian/e_comparison.png
+- plots/keplerian/a_comparison.png
+- plots/keplerian/u_comparison.png
+- plots/keplerian/raan_comparison.png
+ls_REG_MagDiff_PLOT_5:
+- plots/magnitudes/position_magnitude.png
+- plots/magnitudes/velocity_magnitude.png
+ss_REG_OrbObs_OIC_10: "\n1. (plots/optimization/convergence.png) The CGPD decreases more rapidly per iteration (on average)\
+  \ in the initial ~30 iterations than in the rest of the optimization. \n\n2. (plots/magnitudes/position_magnitude.png) The\
+  \ absolute value of the position magnitude error is always lower for the optimized orbit compared to the integrated orbit\
+  \ for the period studied.\n\n3. (plots/magnitudes/position_magnitude.png & plots/magnitudes/velocity_magnitude.png) Position\
+  \ initial difference is equal to 0 for both integrated and optimized orbits but velocity initial difference is only zero\
+  \ for the integrated orbit.\n"
+ss_REG_OrbInt_OIC_15: "\n    \n1. A lower position difference magnitude through the entire time span implies a lower CGPD\
+  \ value, as per CGPD definition.\n\n2. The stalling in CGPD reduction suggests the optimizer may have reached a local minimum.\
+  \ \n"
+ss_REG_OrbCon_OIC_23: "\nThe optimized orbit will always have a greater or equal difference (in position and/or velocity)\
+  \ than the integrated orbit at the initial time, since the change of the initial state vector is the only way to reduce\
+  \ the CGPD in this assignment.    \n"
+ls_AEX_OptTotalStep_PLOT_2:
+- plots/timestep_study/performance_vs_timestep.png
+ls_AEX_CGPDStep_PLOT_2:
+- plots/timestep_study/cgpd_vs_timestep.png
+ls_AEX_OptTotalCGPD_PLOT_2:
+- plots/timestep_study/cputime_vs_cgpd.png
+ss_AEX_OptStep_OIC_3: '
+
+  1. (plots/timestep_study/performance_vs_timestep.png) The optimization with time step #3 & #4 reached the maximum iterations
+  before converging into a solution.
+
+
+  2. (plots/timestep_study/cputime_vs_cgpd.png) For the values studied, a reduction of time step leads to a higher CPU time.
+
+
+  3. (plots/timestep_study/performance_vs_timestep.png) The CPU time and the number of iterations both show a similar trend
+  (increasing and decreasing in the same points).
+
+  '
+ss_AEX_OptStep_OIC_5: '
+
+  1. The number of iterations is a driving factor in the CPU time.
+
+
+  2. Current hyperparameters (learning rate, tolerance, max. iterations, etc.) of the optimizer cannot guarantee an optimum
+  for all time steps studied.
+
+  '
+ss_AEX_OptStep_OIC_6: "\nImplementing a robust optimizer requires hyperparameter tuning to guarantee convergence to a local\
+  \ optimum. \n"
+ss_CEX_Explain_GEN_10: 'Advanced features implemented using Fortran and Python:
+
+  1. Modular Fortran architecture: 7 separate modules (gravity, j2_perturbation, srp_perturbation, third_body_perturbation,
+  drag_perturbation, velocity_verlet, objective_function) for independent development and reusability
+
+  2. Dual-path file access: Fallback logic (../../ vs ../../../) enabling execution from build/ or root directories
+
+  3. Numerical gradient computation: Central finite differences (epsilon=1e-5) for derivative-based optimization without analytical
+  jacobians
+
+  4. Best-solution tracking: Returns minimum CGPD from iteration history, preventing momentum overshoot artifacts
+
+  5. Systematic sensitivity studies: 16 force model combinations, 20 hyperparameter pairs, 10 perturbed initial states, 10
+  integration timesteps
+
+  6. Multi-axis plotting: Dual/triple y-axes (twinx()) for overlaying residuals, differences, and multi-variable trends
+
+  7. Efficient Velocity Verlet: Pre-allocated arrays, dt^2 pre-computation, achieving 0.5s runtime target
+
+  8. Automated compilation: Individual shell scripts per program plus centralized Makefile for correct dependency order
+
+  9. Early stopping: Patience-based convergence (100 iterations) prevents wasted computation at optimization plateau
+
+  10. Answer sheet auto-generation: Python script extracts values from data files, eliminating manual transcription errors
+
+  11. Configurable perturbations: Boolean toggles (ENABLE_J2, ENABLE_DRAG, ENABLE_SRP, ENABLE_THIRD_BODY) allow runtime force
+  model selection
+
+  12. SGP4 reference integration: NPZ file loading with Julian date conversion for high-precision orbit comparison
+
+  13. Angle wrapping: Proper modulo arithmetic for angular elements (RAAN, inclination, argument of latitude) in residual
+  plots
+
+  14. Shadow modeling: Eclipse detection for SRP using dot product between Sun-satellite and Sun-Earth vectors
+
+  15. Comprehensive data output: Time-stamped state vectors, acceleration components, Keplerian elements, convergence metrics
+
+  16. Cross-platform compatibility: Works on Linux/macOS with gfortran, numpy, matplotlib dependencies only
+
+  17. Using Fortran (I bet nobody else did).'
+ss_MDT_AI_GEN_0: 'GitHub Copilot was used extensively throughout this assignment as an AI pair-programming assistant. Specific
+  usage included:
+
+  1. Code generation: Initial Fortran module templates, Python plotting scripts
+
+  2. Debugging: Identifying format string errors, module compilation order issues, Julian date conversion bugs
+
+  3. Optimization: Suggesting algorithm improvements (best-solution tracking, hyperparameter tuning)
+
+  4. Documentation: Generating code comments and README sections
+
+  All AI-generated code was thoroughly reviewed, tested, and modified to ensure correctness and meet assignment requirements.
+  The optimization algorithm design, force model selection, and analysis were done independently.'
+sf_REG_WORKLOAD_GEN_0: 11.0
+ss_REG_FEEDBACK_GEN_0: I do not see the point in implementing a optimizer when all (of most) of us do it with AI just to pass
+  the assignment and really take no learning from it. It is impossible to get a good perspective (in my opinion) on numerical
+  optimization with just a lecture on that plus an assignment and never touching it again. Some of us already did optimization
+  courses and have some experience but otherwise it is just an artifact of this assignment.

@@ -1,0 +1,125 @@
+# Assignment A1 Answer Sheet
+# Generated programmatically on 2025-11-15 17:50:22
+# Student Number: 6541356
+# NORAD ID: 26356
+
+ss_REG_Language_GEN_0: Python 3.12
+si_REG_NORADID_GEN_0: 26356
+ss_REG_SatDesc_OIC_5: "USA 149 (DSP 20) is a missile detection satellite launched in \n  \
+  \      2000-05-08 in a geosyncronous orbit avobe the Pacific Ocean. Its orbit is verly likely\
+  \ designed for \n        continuous surveillance of possible tactical missile attacks from\
+  \ Asia towards the US. It is equipped \n        with infrarred sensors for that mission."
+ls_MDT_TLE_GEN_0:
+- USA 149 (DSP 20)
+- 1 26356U 00024A   25319.34697609  .00000098  00000+0  00000+0 0  9997
+- 2 26356  13.0092  13.3480 0001289 258.3132 102.6669  1.00277785 30776
+ss_REG_SGP4IMPL_GEN_0: https://github.com/brandon-rhodes/python-sgp4
+ls_MDT_SGP4_SRC_0:
+- main.py
+ss_REG_SGP4_CODE_4: "main.py:\n\n```python\ndef sgp4_propagate(tle, ti, tf, dt):\n    \"\"\
+  \"Propagate orbit using SGP4 with vectorized array operations.\n    \n    Args:\n      \
+  \  tle: Tuple of (name, line1, line2) TLE data\n        ti: Start time in seconds from TLE\
+  \ epoch\n        tf: End time in seconds from TLE epoch\n        dt: Time step in seconds\n\
+  \    \n    Returns:\n        Tuple of (errors, positions, velocities, jd_array, fr_array,\
+  \ satellite, times_seconds)\n        - errors: (N,) array of error codes\n        - positions:\
+  \ (N, 3) array of positions [km] in TEME frame\n        - velocities: (N, 3) array of velocities\
+  \ [km/s] in TEME frame\n        - jd_array: (N, 1) array of Julian date whole parts\n  \
+  \      - fr_array: (N, 1) array of Julian date fractional parts (days from epoch)\n    \
+  \    - satellite: Satrec object\n        - times_seconds: (N, 1) array of times in seconds\
+  \ from epoch\n    \"\"\"\n    sat = Satrec.twoline2rv(tle[1], tle[2])\n\n    # Time vector\
+  \ in seconds from TLE epoch\n    times_seconds = np.arange(ti, tf + dt, dt, dtype=float)\
+  \  # shape (N,)\n\n    # Full Julian date at each step (including fractional epoch!)\n \
+  \   epoch_jd = sat.jdsatepoch + sat.jdsatepochF\n    jd_full = epoch_jd + times_seconds\
+  \ / 86400.0             # shape (N,)\n\n    # Split into integer + fractional parts for\
+  \ sgp4_array\n    jd_int = np.floor(jd_full).astype(float)\n    jd_frac = jd_full - jd_int\n\
+  \n    # Propagate\n    e, r_km, v_km_s = sat.sgp4_array(jd_int, jd_frac)\n    assert np.all(e\
+  \ == 0), f\"SGP4 failed at {np.sum(e != 0)} epochs out of {len(e)}\"\n\n    return e, r_km,\
+  \ v_km_s, jd_int, jd_frac, sat, times_seconds\n\n```\n"
+sf_MDT_OrbTimeIni_NUM_0: 0.0
+sf_MDT_OrbTimeEnd_NUM_0: 86400.0
+sf_MDT_OrbTimeStep_NUM_0: 600.0000044703484
+lf_REG_OrbPosIni_NUM_0:
+- 40856798.06472652
+- 10415249.306201033
+- 170241.0454771349
+lf_REG_OrbVelIni_NUM_0:
+- -742.474890142332
+- 2902.325079477011
+- 692.057854118429
+lf_REG_OrbPosEnd_NUM_1:
+- 40672064.132925205
+- 11110742.225688145
+- 338394.5815567545
+lf_REG_OrbVelEnd_NUM_1:
+- -794.5765133610251
+- 2888.556664458679
+- 691.8020841904826
+ls_MDT_OrbPlot_SRC_0:
+- plot_orbit.py
+ss_REG_OrbPlot_CODE_7: "plot_orbit.py:\n\n```python\ndef plot_groundtrack(positions, times_jd,\
+  \ sat_name, output_prefix='plots/orbit'):\n    \"\"\"Plot satellite groundtrack on Earth\
+  \ map with proper Earth rotation.\n    \n    Args:\n        positions: (N, 3) array of positions\
+  \ in TEME frame [km]\n        times_jd: (N, 2) array of Julian dates [jd_whole, jd_frac]\n\
+  \        sat_name: Satellite name for title\n        output_prefix: Prefix for output filenames\n\
+  \    \"\"\"\n    # Convert TEME to ECEF (accounting for Earth rotation)\n    positions_ecef\
+  \ = teme_to_ecef(positions, times_jd)\n    \n    # Convert ECEF to lat/lon\n    latitude,\
+  \ longitude = ecef_to_latlon(positions_ecef)\n    \n    # Create figure with PlateCarree\
+  \ projection\n    fig = plt.figure(figsize=(16, 9))\n    ax = plt.axes(projection=ccrs.PlateCarree())\n\
+  \    \n    # Add map features\n    ax.add_feature(cfeature.LAND, facecolor='lightgray',\
+  \ alpha=0.5)\n    ax.add_feature(cfeature.OCEAN, facecolor='lightblue', alpha=0.5)\n   \
+  \ ax.add_feature(cfeature.COASTLINE, linewidth=0.5)\n    ax.add_feature(cfeature.BORDERS,\
+  \ linewidth=0.3, alpha=0.5)\n    ax.gridlines(draw_labels=True, linewidth=0.5, alpha=0.5,\
+  \ linestyle='--')\n    \n    # Plot groundtrack - handle longitude wrapping\n    # Split\
+  \ into segments where longitude wraps around\n    lon_diff = np.diff(longitude)\n    wrap_indices\
+  \ = np.where(np.abs(lon_diff) > 180)[0]\n    \n    # Plot in segments\n    start_idx = 0\n\
+  \    for wrap_idx in wrap_indices:\n        ax.plot(longitude[start_idx:wrap_idx+1], latitude[start_idx:wrap_idx+1],\n\
+  \                'r-', linewidth=2, transform=ccrs.Geodetic(), alpha=0.8)\n        start_idx\
+  \ = wrap_idx + 1\n    \n    # Plot final segment\n    ax.plot(longitude[start_idx:], latitude[start_idx:],\n\
+  \            'r-', linewidth=2, transform=ccrs.Geodetic(), alpha=0.8, label='Ground Track')\n\
+  \    \n    # Get time range for title\n    start_time = jd_to_datetime(times_jd[0, 0], times_jd[0,\
+  \ 1])\n    end_time = jd_to_datetime(times_jd[-1, 0], times_jd[-1, 1])\n    duration_hours\
+  \ = (end_time - start_time).total_seconds() / 3600\n    \n    ax.set_title(f'Ground Track\
+  \ - {sat_name}\\n' +\n                f'{start_time.strftime(\"%Y-%m-%d %H:%M\")} to {end_time.strftime(\"\
+  %H:%M UTC\")} ' +\n                f'({duration_hours:.1f} hours)',\n                fontsize=14,\
+  \ fontweight='bold', pad=20)\n    \n    ax.legend(loc='lower left', fontsize=11, framealpha=0.9)\n\
+  \    ax.set_extent([-180, 180, -90, 90], crs=ccrs.PlateCarree())\n    \n    plt.tight_layout()\n\
+  \    filename = f'{output_prefix}_groundtrack.png'\n    plt.savefig(filename, dpi=300, bbox_inches='tight')\n\
+  \    print(f'Saved: {filename}')\n    plt.close()\n\n```\n"
+ls_REG_Orb_PLOT_22:
+- plots/orbit_pos_vel_vs_time.png
+- plots/orbit_3d.png
+- plots/orbit_radius_speed.png
+- plots/orbit_orbital_elements.png
+- plots/orbit_groundtrack.png
+ss_REG_OrbObs_OIC_14: "1. (orbit_pos_vel_vs_time.png) Position and velocity of the satellite\
+  \ show sinusodial\n        variations with a day period between them. Z-axis variations\
+  \ are much smaller than X and Y-axis ones.\n        \n        2. (orbit_radius_speed.png)\
+  \ Radius and speed remain nearly constant. \n\n        3. (orbit_groundtrack.png) Ground\
+  \ track representation shows a repeating ground track orbit over the Pacific Ocean."
+ss_REG_OrbInt_OIC_19: "1. Low inclination values are typical for geosynchronous satellites,\
+  \ helping pointing from ground.\n        \n        2. Low changes in radius and speed indicate\
+  \ a very low eccentricity orbit."
+ss_REG_OrbCon_OIC_27: "Geopolitical considerations influence the design of surveillance \n\
+  \        satellite orbits, which exploit orbital mechanics to serve military interests."
+ss_CEX_Explain_GEN_10: "Advanced coding features implemented:\n\n1. Modular design: Separate\
+  \ modules for TLE fetching (fetch_tle.py), propagation \n   (main.py), and visualization\
+  \ (plot_orbit.py) following separation of concerns.\n\n2. Vectorized NumPy operations: Arrays\
+  \ used throughout for fast computation of \n   orbital parameters (radii, speeds, angular\
+  \ momentum, eccentricity).\n\n3. Data persistence: Results saved in compressed .npz format\
+  \ with metadata.\n\n4. Comprehensive visualization: Four plot types with professional formatting,\
+  \ \n   including 3D orbit with Earth sphere and computed orbital elements.\n\n5. Error handling:\
+  \ SGP4 error codes tracked; file existence checks with informative \n   error messages.\n\
+  \n6. Documentation: Docstrings for all functions with parameter and return types; \n   README\
+  \ files with usage examples.\n\n7. Preallocated arrays: Using np.zeros() instead of append\
+  \ operations for efficiency.\n\n8. Reusable functions: fetch_tle() returns structured data\
+  \ for use in other scripts."
+ss_MDT_AI_GEN_0: "AI (GitHub Copilot) was used to assist with:\n\n1. Code structure and organization:\
+  \ suggestions for modular design and function signatures, \ncode excellence features' implementation\
+  \ and implementation of new libraries with low \nfamiliarity by the student (e.g., cartopy).\n\
+  \n2. NumPy vectorization: assistance with efficient array operations for orbital element\
+  \ \n   calculations.\n\n3. Matplotlib formatting.\n\n4. Documentation: template for docstrings\
+  \ and README structure.\n\n5. Generating the answer sheet programatically (generate_answer_sheet.py)"
+sf_REG_WORKLOAD_GEN_0: 8
+ss_REG_FEEDBACK_GEN_0: "Assignment 1 good introduction to gitlab and SGP4.\n\n        Suggestions:\n\
+  \        - Organize a tutorial session or similar to go through most of the steps in person\
+  \ together."
